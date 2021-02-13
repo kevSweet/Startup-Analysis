@@ -22,6 +22,9 @@ data[, factor_cols] <- lapply(data[ , factor_cols], as.factor)
 data$funding_total_usd <- as.numeric(sapply(data$funding_total_usd, function(x){gsub("[ ,-]", "", x)}, USE.NAMES=FALSE))
 data$funding_total_usd[is.na(data$funding_total_usd)] <- 0
 
+# Remove blank rows
+data <- data[!is.na(data$funding_rounds),]
+
 summary(data)
 ```
 
@@ -48,5 +51,8 @@ plot(data$venture, data$round_total)
 abline(0,1)
 
 
+```
+```{r}
+saveRDS(data, "kaggle_data_cleaned.rds")
 ```
 
