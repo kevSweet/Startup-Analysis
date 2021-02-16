@@ -22,13 +22,31 @@ data[, factor_cols] <- lapply(data[ , factor_cols], as.factor)
 data$funding_total_usd <- as.numeric(sapply(data$funding_total_usd, function(x){gsub("[ ,-]", "", x)}, USE.NAMES=FALSE))
 data$funding_total_usd[is.na(data$funding_total_usd)] <- 0
 
-# Remove blank rows
-data <- data[!is.na(data$funding_rounds),]
+# Remove blank rows and missing status
+data <- data[!(data$name == "" | is.na(data$name)),]
+data <- data[data$status != "",]
+data <- data[data$funding_total_usd != 0,]
+data <- data[data$market != "",]
+
+# At funding years
+#data$first_funding_year <- format(as.Date(data$first_funding_date, format="%d/%m/%Y"),"%Y")
+#data$last_funding_year <- format(as.Date(data$last_funding_date, format="%d/%m/%Y"),"%Y")
+
+# Only USA
+data <- data[data$country_code == "USA",]
+
+# After 1980
+data <- data[data$founded_year >= 1980 & !is.na(data$founded_year) ,]
+
+
+# Outliers
+data <- data[data$name != "Verizon Communications",]
+
 
 summary(data)
 ```
 
-Next, we confirm some of the data. All the funds data adds up to the total, but venture money and round money do not perfectly align. It appears that in most cases, the sum of round totals addds up to be the venture funding, but sometimes round data is missing or see data is included. A new round_total variable is create.
+Next, we confirm some of the data. All the funds data adds up to the total, but venture money and round money do not perfectly align. It appears that in most cases, the sum of round totals adds up to be the venture funding, but sometimes round data is missing or see data is included. A new round_total variable is create.
 
 ```{r}
 # Count Na's as 0
@@ -54,5 +72,6 @@ abline(0,1)
 ```
 ```{r}
 saveRDS(data, "kaggle_data_cleaned.rds")
+write.csv(data, "kaggle_data_cleaned.csv")
 ```
 
