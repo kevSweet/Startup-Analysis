@@ -1,0 +1,48 @@
+---
+title: "CheckAnalysisAssumptions"
+author: "Kevin Sweet"
+date: "February 16, 2021"
+output: pdf_document
+---
+
+```{r}
+require(dplyr)
+kaggle_data_cleaned <- readRDS("kaggle_data_cleaned.rds")
+```
+
+
+
+Check if Anova assumptions are valid for mean amounts of money raised for each industry (Question 1)
+1. Equal Variances
+2. Normally distributed
+3. Independent samples
+
+First we will filter out values without sufficiently large sample sizes. A floor group sample size of 30 was chosen so that we can assume by the central limit theorem that the sample data is normally distributed.This assumption of normality will be further tested in our full analysis.
+
+```{r}
+filteredData <- kaggle_data_cleaned %>% group_by(market) %>% filter(n() >= 30)
+
+group_variances <- with(filteredData,tapply(seed, market, var))
+group_variances <- group_variances[!is.na(group_variances)]
+group_samplesizes <- with(filteredData,tapply(seed, market, length))
+group_samplesizes <- group_samplesizes[!is.na(group_samplesizes)]
+
+max(group_variances) - min(group_variances)
+
+group_samplesizes <- with(kaggle_data_cleaned,tapply(funding_total_usd, market, length))
+group_samplesizes <- group_samplesizes[!is.na(group_samplesizes)] 
+group_samplesizes <- group_samplesizes[group_samplesizes >= 30]
+```
+Check if data appears linear for total amount of money raised (Question 2)
+
+```{r}
+
+
+```
+
+Check if Anova assumptions are valid for mean count of financing rounds across industry (Question 3)
+
+```{r}
+
+
+```
