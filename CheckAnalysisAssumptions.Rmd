@@ -45,7 +45,8 @@ kaggle_data_cleaned %>%
 # bucket first_funding_at by year and filter bad data (funding 0011)
 first_funding_date <- kaggle_data_cleaned %>% 
   mutate(first_funding_at = substring(first_funding_at, 1,4)) %>% 
-  filter(first_funding_at >= "1950") 
+  filter(first_funding_at >= "1980") %>% 
+  filter(first_funding_at <= "2014")
 
 model <- lm(formula = funding_total_usd ~ first_funding_at, data = first_funding_date)
 plot(funding_total_usd ~ first_funding_at, data=first_funding_date); abline(model) 
