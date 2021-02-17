@@ -33,11 +33,24 @@ group_samplesizes <- with(kaggle_data_cleaned,tapply(funding_total_usd, market, 
 group_samplesizes <- group_samplesizes[!is.na(group_samplesizes)] 
 group_samplesizes <- group_samplesizes[group_samplesizes >= 30]
 ```
-Check if data appears linear for total amount of money raised (Question 2)
+
+### Check if data appears linear for total amount of money raised (Question 2)
 
 ```{r}
+# EDA
+kaggle_data_cleaned %>% 
+  select(first_funding_at) %>% 
+  arrange(first_funding_at)
 
+# bucket first_funding_at by year and filter bad data (funding 0011)
+first_funding_date <- kaggle_data_cleaned %>% 
+  mutate(first_funding_at = substring(first_funding_at, 1,4)) %>% 
+  filter(first_funding_at >= "1950") 
 
+model <- lm(formula = funding_total_usd ~ first_funding_at, data = first_funding_date)
+plot(funding_total_usd ~ first_funding_at, data=first_funding_date); abline(model) 
+
+summary(model) 
 ```
 
 Check if Anova assumptions are valid for mean count of financing rounds across industry (Question 3)
