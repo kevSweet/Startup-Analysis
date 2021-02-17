@@ -43,6 +43,20 @@ Check if data appears linear for total amount of money raised (Question 2)
 Check if Anova assumptions are valid for mean count of financing rounds across industry (Question 3)
 
 ```{r}
+hist(filteredData$funding_rounds)
+industryData <- do.call(data.frame, aggregate(cbind(funding_rounds, funding_total_usd, venture, seed)  ~ market, data=filteredData, FUN=function(x) c(mn = mean(x), n = length(x), var = var(x))))
+summary(industryData$funding_rounds.mn)
+
+#Variance in rounds is not equal
+summary(industryData$funding_rounds.var)
+hist(industryData$funding_rounds.var)
+
+# Round to seed funding has no trend
+plot(industryData$funding_rounds.mn, industryData$seed.mn)
+
+# Round to venture funding is linear.
+plot(industryData$funding_rounds.mn, industryData$venture.mn)
+
 
 
 ```
