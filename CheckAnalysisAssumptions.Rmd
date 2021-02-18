@@ -42,6 +42,8 @@ kaggle_data_cleaned %>%
   select(first_funding_at) %>% 
   arrange(first_funding_at)
 
+# QUESTION FOR THE TEAM:  Can we adjust for inflation?
+
 first_year <- 1995
 # bucket first_funding_at by year and filter bad data (funding 0011)
 first_funding_date <- kaggle_data_cleaned %>% 
@@ -51,8 +53,10 @@ first_funding_date <- kaggle_data_cleaned %>%
   mutate(first_funding_at =  first_funding_at - first_year) %>% 
   filter(seed < 10000000) # will need to justify
 
+
 model <- lm(formula = seed ~ first_funding_at, data = first_funding_date)
 plot(seed ~ first_funding_at, data=first_funding_date); abline(model) 
+
 
 #boxplot(formula = seed ~ first_funding_at, data = first_funding_date)
 ```
