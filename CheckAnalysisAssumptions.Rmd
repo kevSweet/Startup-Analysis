@@ -44,14 +44,15 @@ kaggle_data_cleaned %>%
 
 # QUESTION FOR THE TEAM:  Can we adjust for inflation?
 
-first_year <- 1995
+first_year <- 1980
 # bucket first_funding_at by year and filter bad data (funding 0011)
 first_funding_date <- kaggle_data_cleaned %>% 
   mutate(first_funding_at = as.numeric(substring(first_funding_at, 1,4)) ) %>% 
   filter(first_funding_at >= first_year) %>% 
   filter(first_funding_at <= 2014) %>%
   mutate(first_funding_at =  first_funding_at - first_year) %>% 
-  filter(seed < 10000000) # will need to justify
+  filter(seed < 10000000)  %>%  # will need to justify
+  filter(seed > 0) # will need to justify
 
 
 model <- lm(formula = seed ~ first_funding_at, data = first_funding_date)
