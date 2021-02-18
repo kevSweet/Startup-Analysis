@@ -69,7 +69,7 @@ print(summary(diff))
 plot(data$venture, data$round_total)
 abline(0,1)
 
-# Create inflation adjusted table based of 2014 dollars
+# Create inflation adjusted table based of 1980 dollars
 inflationlookup <- inflation_adjust(1980)
 data$inflationAdjustedSeed_1980 <- data$seed * 
         inflationlookup[match(format(data$first_funding_at, format="%Y"), inflationlookup$year),]$adj_value
