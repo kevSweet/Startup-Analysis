@@ -8,6 +8,7 @@ First, we import the data, converting dates and numeric values where necessary.
 
 ```{r}
 # Import
+require(blscrapeR)
 data <- read.csv("investments_VC.csv")
 
 # Convert Dates
@@ -68,6 +69,10 @@ print(summary(diff))
 plot(data$venture, data$round_total)
 abline(0,1)
 
+# Create inflation adjusted table based of 2014 dollars
+inflationlookup <- inflation_adjust(1980)
+data$inflationAdjustedSeed_1980 <- data$seed * 
+        inflationlookup[match(format(data$first_funding_at, format="%Y"), inflationlookup$year),]$adj_value
 
 ```
 ```{r}
