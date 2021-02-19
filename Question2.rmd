@@ -1,0 +1,52 @@
+---
+title: "Question 2"
+author: "Jonathan Kerr"
+date: "18/02/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(dplyr)
+kaggle_data_cleaned <- readRDS("kaggle_data_cleaned.rds")
+```
+
+### Check if data appears linear for total amount of money raised (Question 2)
+
+```{r}
+# EDA
+eda <- kaggle_data_cleaned %>% 
+  select(first_funding_at) %>% 
+  arrange(first_funding_at)
+head(eda)
+
+# bucket first_funding_at by year and filter bad data (funding 0011)
+first_year <- 1980
+first_funding_date <- kaggle_data_cleaned %>% 
+  mutate(first_funding_at = as.numeric(substring(first_funding_at, 1,4)) ) %>% 
+  filter(first_funding_at >= first_year) %>% 
+  filter(first_funding_at <= 2014)# %>%
+
+model <- lm(formula = seed ~ first_funding_at, data = first_funding_date)
+plot(seed ~ first_funding_at, data=first_funding_date); abline(model) 
+summary(model) 
+
+# The outliers seem to be throwing things off.  Filter out anything greater than 5 SDs from mean
+outlier_metric <-  mean(first_funding_date$seed) + (5 * sd(first_funding_date$seed)) # six 9's of precision
+first_funding_date_out <- first_funding_date %>% 
+  filter(seed < outlier_metric)
+
+model <- lm(formula = seed ~ first_funding_at, data = first_funding_date_out)
+plot(seed ~ first_funding_at, data=first_funding_date_out); abline(model) 
+summary(model) 
+
+# This looks like it could be skewed up by the larger number of rounds in later years.  Try comparing means instead
+mean_compare <- first_funding_date_out %>% 
+    group_by(first_funding_at) %>%
+    dplyr::summarize(seed_mean = mean(seed, na.rm=TRUE))
+
+model <- lm(formula = seed_mean ~ first_funding_at, data = mean_compare)
+plot(seed_mean ~ first_funding_at, data=mean_compare); abline(model) 
+summary(model) 
+```
+
