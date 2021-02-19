@@ -1,0 +1,61 @@
+---
+title: "Question 3"
+author: "Sai Muktevi"
+date: "2/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Is the average amount of money raised different depending on the industry?
+
+First we will do some exploration on the cleaned dataset.
+
+### 1. Check summary statistics. 
+
+```{r}
+require(dplyr)
+kaggle_data_cleaned <- readRDS("kaggle_data_cleaned.rds")
+summary(kaggle_data_cleaned)
+```
+Since there's a lot of information here lets remove the unnecessary information. Here our main focus is the `market` and the `funding_total_usd` for each company.
+
+```{r}
+data <- kaggle_data_cleaned %>%
+  select(market, funding_total_usd)
+dim(data)
+summary(data)
+```
+
+Now we can clearly see the more prominent markets that companies from this dataset operate in and some information about the Total Funding for each company.
+
+To get an idea of the range of funding and the distribution lets plot a few more graphs on these two variables to get a closer look at the data.
+
+```{r}
+#frequency of companies across markets in descending order
+sorted_markets <- sort(table(data$market), decreasing=TRUE)
+
+#taking top n most popular markets of operation
+n=20
+popular_markets <- sorted_markets[1:n]
+par(mar=c(10, 5, 1, 1)) #adjusting margins
+barplot(popular_markets, las=2)
+
+```
+It looks like there's clearly a larger portion of companies that are in the Software and Biotechnology markets which we will have to keep in mind.
+
+Let's now take a look at the Total Funding variable.
+```{r}
+```
+
+
+### 2. Check ANOVA assumptions
+
+Check if ANOVA assumptions are valid for mean amounts of money raised for each industry (Question 1)
+1. Equal Variances
+2. Normally distributed
+3. Independent samples
+
+### 3. Perform ANOVA
