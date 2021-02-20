@@ -26,7 +26,7 @@ lines(1:max(fundingData$funding_rounds), dnbinom(0:(max(fundingData$funding_roun
 ```
 
 
-
+ 
 The average amount of funding, when we only include rounds that received funding, increases steadily throughout the rounds, starting at an average of \$7 million in Round A and ending with an average $50 million in Round H. However, the msot money raised in total is in Round B, due to the higher average than Round A combined with higher frequency than all later rounds.
 
 ```{r}
