@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 First we will do some exploration on the cleaned dataset.
 
-### 1. Check summary statistics. 
+## 1. Check summary statistics. 
 
 ```{r}
 require(dplyr)
@@ -31,8 +31,7 @@ summary(data)
 
 Now we can clearly see the more prominent markets that companies from this dataset operate in and some information about the Total Funding for each company.
 
-To get an idea of the range of funding and the distribution lets plot a few more graphs on these two variables to get a closer look at the data.
-
+For a more visual representation of the distribution of data points across the different markets:
 ```{r}
 #frequency of companies across markets in descending order
 sorted_markets <- sort(table(data$market), decreasing=TRUE)
@@ -44,18 +43,59 @@ par(mar=c(10, 5, 1, 1)) #adjusting margins
 barplot(popular_markets, las=2)
 
 ```
+  
 It looks like there's clearly a larger portion of companies that are in the Software and Biotechnology markets which we will have to keep in mind.
 
-Let's now take a look at the Total Funding variable.
+### Removing Outliers
+
+Let's now take a look at the Total Funding variable and generate boxplots for each of the most popular markets and their total funding per company. We find many outliers to deal with. To ensure that our tests are accurate we remove some of the prominent outliers.  
 ```{r}
+#total funding data
+par(mar=c(3, 5, 1, 1)) 
+boxplot(data$funding_total_usd,  main="Total Funding boxplot")
+
+#total funding data for each market
+popular_markets = as.data.frame(popular_markets)
+popular_markets_data <- filter(data, data$market %in% popular_markets$Var1)
+popular_markets_data = na.omit(popular_markets_data)
+
+#drop unused levels
+popular_markets_data$market <- droplevels(popular_markets_data$market)
+
+par(mar=c(10, 5, 1, 1)) 
+boxplot(popular_markets_data$funding_total_usd~popular_markets_data$market,las=2, xlab=NULL, ylab=NULL, main="Popular Markets - Funding total boxplots")
+
+#saving then removing the outliers for total data
+outliers <- boxplot(data$funding_total_usd, plot = FALSE)$out
+
+#number of outliers according to boxplot
+#length(outliers)
+x<-data
+x<- x[-which(x$funding_total_usd %in% outliers),]
+par(mar=c(3, 5, 1, 1)) 
+boxplot(x$funding_total_usd, main="Total Funding boxplot (outliers removed)")
+
+#plot the popular markets boxplots again
+popular_markets_data <- filter(x, x$market %in% popular_markets$Var1)
+popular_markets_data = na.omit(popular_markets_data)
+
+#drop unused levels
+popular_markets_data$market <- droplevels(popular_markets_data$market)
+
+# distribution of data across top 20 popular markets
+par(mar=c(10, 5, 1, 1)) 
+boxplot(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data, las=2, xlab=NULL, ylab=NULL ,main="Popular Markets - Funding total boxplots (outliers removed)")
 ```
+It looks like there are quite a large number of outliers outside the range as we cannot see any clear boxplots initially.  
+
+After removal of outliers we can now observe the variances across the top 20 markets regarding their total funding values.
 
 
-### 2. Check ANOVA assumptions
+## 2. Check ANOVA assumptions
 
 Check if ANOVA assumptions are valid for mean amounts of money raised for each industry (Question 1)
 1. Equal Variances
 2. Normally distributed
 3. Independent samples
 
-### 3. Perform ANOVA
+## 3. Perform ANOVA
