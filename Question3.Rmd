@@ -113,7 +113,7 @@ library(HH)
 hov(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data)
 hovPlot(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data)
 ```
-
+The variances of each of the most populat markets are all not equal.
 
 #### b. Normally distributed means
 
@@ -131,7 +131,16 @@ means_data = as.data.frame(means_data)
 hist(means_data, breaks = 6)
 
 #if data is normal then points should form a straight line
-qqnorm(popular_markets_data$funding_total_usd)
+qqnorm(popular_markets_data$funding_total_usd, main="Total Funding Data")
+qqline(popular_markets_data$funding_total_usd)
+
+
+#qq plot for each 
+for(i in popular_markets$Var1){
+  temp = popular_markets_data[popular_markets_data$market == i,]
+  qqnorm(temp$funding_total_usd, main = `i`)
+  qqline(temp$funding_total_usd)
+}
 
 ```
 Need to look into:  
@@ -146,7 +155,7 @@ Note that, normality test is sensitive to sample size. Small samples most often 
 
 #### c. Independent samples
 
-Assuming independence of samples for this case.
+Assuming independence of samples for this case. We have no further information on the data collection methods to confirm independence.That being said no two groups consists of the same company appearing in multiple markets and all companies are expected to be independent startups with no collaboration or affiliation with each other.
 
 ## 3. Perform ANOVA
 
@@ -154,3 +163,25 @@ Assuming independence of samples for this case.
 summary(aov(popular_markets_data$funding_total_usd~popular_markets_data$market))
 ```
 **ANOVA results in rejecting the null hypothesis that the average total funding in the top `r n` market groups is the same**
+
+
+Alternatives to ANOVA for unequal variance are:
+
+Here are some options:
+
+transformations
+Welch ANOVA
+weighted least squares
+robust regression
+heteroscedasticity consistent standard errors
+bootstrap
+Kruskal-Wallis test
+ordinal logistic regression
+
+[Welch's ANOVA](http://ritsokiguess.site/docs/2017/05/19/welch-analysis-of-variance/) 
+(One-way analysis of means (not assuming equal variances)):
+```{r}
+#library(rstatix)
+#welch_anova_test(popular_markets_data$funding_total_usd~popular_markets_data$market)
+oneway.test(popular_markets_data$funding_total_usd~popular_markets_data$market)
+```
