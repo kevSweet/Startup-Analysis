@@ -24,7 +24,7 @@ Since there's a lot of information here lets remove the unnecessary information.
 
 ```{r}
 data <- kaggle_data_cleaned %>%
-  select(market, funding_total_usd)
+  dplyr::select(market, funding_total_usd)
 dim(data)
 summary(data)
 ```
@@ -89,13 +89,68 @@ boxplot(popular_markets_data$funding_total_usd~popular_markets_data$market, data
 It looks like there are quite a large number of outliers outside the range as we cannot see any clear boxplots initially.  
 
 After removal of outliers we can now observe the variances across the top 20 markets regarding their total funding values.
-
+```{r}
+summary(popular_markets_data)
+print(paste(c("Market", "Variance (within)", "Mean")))
+for(i in popular_markets$Var1){
+  temp = popular_markets_data[popular_markets_data$market == i,]
+  print(paste(c(i, var(temp$funding_total_usd), mean(temp$funding_total_usd))))
+}
+```
 
 ## 2. Check ANOVA assumptions
 
-Check if ANOVA assumptions are valid for mean amounts of money raised for each industry (Question 1)
-1. Equal Variances
-2. Normally distributed
-3. Independent samples
+Check if ANOVA assumptions are valid for average amounts of money raised for each industry (Question 1)
+
+#### a. Equal Variances (Homoscedasticity or homegeity of variance)
+
+
+```{r}
+#Homogeneity of Variances
+bartlett.test(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data)
+
+library(HH)
+hov(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data)
+hovPlot(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data)
+```
+
+
+#### b. Normally distributed means
+
+```{r}
+#frequency distribution of total funding amounts
+hist(popular_markets_data$funding_total_usd)
+
+#plotting means of samples (for each category)
+means_data = c()
+for(i in popular_markets$Var1){
+  temp = popular_markets_data[popular_markets_data$market == i,]
+  means_data <- c(mean(temp$funding_total_usd), means_data)
+}
+means_data = as.data.frame(means_data)
+hist(means_data, breaks = 6)
+
+#if data is normal then points should form a straight line
+qqnorm(popular_markets_data$funding_total_usd)
+
+```
+Need to look into:  
+
+Several methods for evaluate normality, including the Kolmogorov-Smirnov (K-S) normality test and the Shapiro-Wilk’s test.  
+
+The null hypothesis of these tests is that “sample distribution is normal”. If the test is significant, the distribution is non-normal.  
+
+Shapiro-Wilk’s method is widely recommended for normality test and it provides better power than K-S. It is based on the correlation between the data and the corresponding normal scores (Ghasemi and Zahediasl 2012).  
+
+Note that, normality test is sensitive to sample size. Small samples most often pass normality tests. Therefore, it’s important to combine visual inspection and significance test in order to take the right decision.  
+
+#### c. Independent samples
+
+Assuming independence of samples for this case.
 
 ## 3. Perform ANOVA
+
+```{r}
+summary(aov(popular_markets_data$funding_total_usd~popular_markets_data$market))
+```
+**ANOVA results in rejecting the null hypothesis that the average total funding in the top `r n` market groups is the same**
