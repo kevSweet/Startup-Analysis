@@ -1,72 +1,186 @@
 ---
 title: "Question 1"
-output: html_notebook
+date: "2/19/2021"
+output: html_document
 ---
 
-Import cleaned data and used libraries.
-
-```{r}
-library(ggplot2)
-fundingData <- readRDS("kaggle_data_cleaned.rds")
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Is the average amount of money raised different depending on the industry?
 
+First we will do some exploration on the cleaned dataset.
 
-### What do Funding Rounds look like?
-
-The number of rounds ranges from 1 to 18. Most firms had just one round, and the third quartile falls at just 3 rounds. The mean and variance are close to equal, and the data may be an Exponential (blue) distribution or Negative Binomial (red) distribution. The Negative Binomial would have a theoretical backing, where each round of funding is essentially a trial where the company has a (small) chance of proceeding to the next round, otherwise it stops raising venture capital.
+## 1. Check summary statistics. 
 
 ```{r}
-summary(fundingData$funding_rounds)
-print(c("Mean", mean(fundingData$funding_rounds)))
-print(c("Var", var(fundingData$funding_rounds)))
-hist(fundingData$funding_rounds, prob=TRUE)
-lines(1:max(fundingData$funding_rounds), dexp(0:(max(fundingData$funding_rounds)-1), 1/mean(fundingData$funding_rounds)), col = 'blue')
-lines(1:max(fundingData$funding_rounds), dnbinom(0:(max(fundingData$funding_rounds)-1), 1, mu=1/mean(fundingData$funding_rounds)), col = 'red')
+require(dplyr)
+kaggle_data_cleaned <- readRDS("kaggle_data_cleaned.rds")
+summary(kaggle_data_cleaned)
+```
+Since there's a lot of information here lets remove the unnecessary information. Here our main focus is the `market` and the `funding_total_usd` for each company.
+
+```{r}
+data <- kaggle_data_cleaned %>%
+  dplyr::select(market, funding_total_usd)
+dim(data)
+summary(data)
 ```
 
+Now we can clearly see the more prominent markets that companies from this dataset operate in and some information about the Total Funding for each company.
 
-
-The average amount of funding, when we only include rounds that received funding, increases steadily throughout the rounds, starting at an average of \$7 million in Round A and ending with an average $50 million in Round H. However, the msot money raised in total is in Round B, due to the higher average than Round A combined with higher frequency than all later rounds.
-
+For a more visual representation of the distribution of data points across the different markets:
 ```{r}
-roundFunding <- fundingData[fundingData["round_total"] > 0,grep("round_.$", colnames(fundingData))]
-is.na(roundFunding) <- roundFunding==0
-roundFunding.mean <- colMeans(roundFunding, na.rm=TRUE)
-roundFunding.sum <- colSums(roundFunding, na.rm=TRUE)
-print(roundFunding.mean)
-barplot(roundFunding.mean)
-barplot(roundFunding.sum)
+#frequency of companies across markets in descending order
+sorted_markets <- sort(table(data$market), decreasing=TRUE)
+
+#taking top n most popular markets of operation
+n=20
+popular_markets <- sorted_markets[1:n]
+par(mar=c(10, 5, 1, 1)) #adjusting margins
+barplot(popular_markets, las=2)
+
+```
+  
+It looks like there's clearly a larger portion of companies that are in the Software and Biotechnology markets which we will have to keep in mind.
+
+### Removing Outliers
+
+Let's now take a look at the Total Funding variable and generate boxplots for each of the most popular markets and their total funding per company. We find many outliers to deal with. To ensure that our tests are accurate we remove some of the prominent outliers.  
+```{r}
+#total funding data
+par(mar=c(3, 5, 1, 1)) 
+boxplot(data$funding_total_usd,  main="Total Funding boxplot")
+
+#total funding data for each market
+popular_markets = as.data.frame(popular_markets)
+popular_markets_data <- filter(data, data$market %in% popular_markets$Var1)
+popular_markets_data = na.omit(popular_markets_data)
+
+#drop unused levels
+popular_markets_data$market <- droplevels(popular_markets_data$market)
+
+par(mar=c(10, 5, 1, 1)) 
+boxplot(popular_markets_data$funding_total_usd~popular_markets_data$market,las=2, xlab=NULL, ylab=NULL, main="Popular Markets - Funding total boxplots")
+
+#saving then removing the outliers for total data
+outliers <- boxplot(data$funding_total_usd, plot = FALSE)$out
+
+#number of outliers according to boxplot
+#length(outliers)
+x<-data
+x<- x[-which(x$funding_total_usd %in% outliers),]
+par(mar=c(3, 5, 1, 1)) 
+boxplot(x$funding_total_usd, main="Total Funding boxplot (outliers removed)")
+
+#plot the popular markets boxplots again
+popular_markets_data <- filter(x, x$market %in% popular_markets$Var1)
+popular_markets_data = na.omit(popular_markets_data)
+
+#drop unused levels
+popular_markets_data$market <- droplevels(popular_markets_data$market)
+
+# distribution of data across top 20 popular markets
+par(mar=c(10, 5, 1, 1)) 
+boxplot(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data, las=2, xlab=NULL, ylab=NULL ,main="Popular Markets - Funding total boxplots (outliers removed)")
+```
+It looks like there are quite a large number of outliers outside the range as we cannot see any clear boxplots initially.  
+
+After removal of outliers we can now observe the variances across the top 20 markets regarding their total funding values.
+```{r}
+summary(popular_markets_data)
+print(paste(c("Market", "Variance (within)", "Mean")))
+for(i in popular_markets$Var1){
+  temp = popular_markets_data[popular_markets_data$market == i,]
+  print(paste(c(i, var(temp$funding_total_usd), mean(temp$funding_total_usd))))
+}
 ```
 
-### How does it relate to market?
+## 2. Check ANOVA assumptions
 
-We restrict the analysis to markets with at least 30 companies recorded.
+Check if ANOVA assumptions are valid for average amounts of money raised for each industry (Question 1)
+
+#### a. Equal Variances (Homoscedasticity or homegeity of variance)
 
 
 ```{r}
-industryData <- do.call(data.frame, aggregate(cbind(funding_rounds, funding_total_usd, venture, seed)  ~ market, data=fundingData, FUN=function(x) c(mn = mean(x), var = var(x))))
-industryData$n <- aggregate(funding_total_usd  ~ market, data=fundingData, FUN=length)$funding_total_usd
-industryData <- industryData[industryData$n >= 30,]
-industryData <- industryData[order(industryData$n, decreasing=TRUE),]
-summary(industryData$funding_rounds.mn)
-barplot(industryData$n[0:10], names.arg = industryData$market[0:10])
+#Homogeneity of Variances
+bartlett.test(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data)
+
+library(HH)
+hov(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data)
+hovPlot(popular_markets_data$funding_total_usd~popular_markets_data$market, data=popular_markets_data)
 ```
+The variances of each of the most populat markets are all not equal.
 
-Variance does not seem to be consistent between industries.
+#### b. Normally distributed means
 
 ```{r}
-#Variance in rounds is not equal
-summary(industryData$funding_rounds.var)
-hist(industryData$funding_rounds.var)
+#frequency distribution of total funding amounts
+hist(popular_markets_data$funding_total_usd)
+
+#plotting means of samples (for each category)
+means_data = c()
+for(i in popular_markets$Var1){
+  temp = popular_markets_data[popular_markets_data$market == i,]
+  means_data <- c(mean(temp$funding_total_usd), means_data)
+}
+means_data = as.data.frame(means_data)
+hist(means_data, breaks = 6)
+
+#if data is normal then points should form a straight line
+qqnorm(popular_markets_data$funding_total_usd, main="Total Funding Data")
+qqline(popular_markets_data$funding_total_usd)
+
+
+#qq plot for each 
+for(i in popular_markets$Var1){
+  temp = popular_markets_data[popular_markets_data$market == i,]
+  qqnorm(temp$funding_total_usd, main = `i`)
+  qqline(temp$funding_total_usd)
+}
+
 ```
+Need to look into:  
 
+Several methods for evaluate normality, including the Kolmogorov-Smirnov (K-S) normality test and the Shapiro-Wilk’s test.  
+
+The null hypothesis of these tests is that “sample distribution is normal”. If the test is significant, the distribution is non-normal.  
+
+Shapiro-Wilk’s method is widely recommended for normality test and it provides better power than K-S. It is based on the correlation between the data and the corresponding normal scores (Ghasemi and Zahediasl 2012).  
+
+Note that, normality test is sensitive to sample size. Small samples most often pass normality tests. Therefore, it’s important to combine visual inspection and significance test in order to take the right decision.  
+
+#### c. Independent samples
+
+Assuming independence of samples for this case. We have no further information on the data collection methods to confirm independence.That being said no two groups consists of the same company appearing in multiple markets and all companies are expected to be independent startups with no collaboration or affiliation with each other.
+
+## 3. Perform ANOVA
 
 ```{r}
-# Round to seed funding has no trend
-plot(industryData$funding_rounds.mn, industryData$seed.mn)
+summary(aov(popular_markets_data$funding_total_usd~popular_markets_data$market))
+```
+**ANOVA results in rejecting the null hypothesis that the average total funding in the top `r n` market groups is the same**
 
-# Round to venture funding is linear.
-plot(industryData$funding_rounds.mn, industryData$venture.mn)
 
+Alternatives to ANOVA for unequal variance are:
+
+Here are some options:
+
+transformations
+Welch ANOVA
+weighted least squares
+robust regression
+heteroscedasticity consistent standard errors
+bootstrap
+Kruskal-Wallis test
+ordinal logistic regression
+
+[Welch's ANOVA](http://ritsokiguess.site/docs/2017/05/19/welch-analysis-of-variance/) 
+(One-way analysis of means (not assuming equal variances)):
+```{r}
+#library(rstatix)
+#welch_anova_test(popular_markets_data$funding_total_usd~popular_markets_data$market)
+oneway.test(popular_markets_data$funding_total_usd~popular_markets_data$market)
 ```
