@@ -1,6 +1,5 @@
 ---
 title: "Question 3"
-author: "Sai Muktevi"
 date: "2/19/2021"
 output: html_document
 ---
