@@ -49,4 +49,29 @@ model <- lm(formula = seed_mean ~ first_funding_at, data = mean_compare)
 plot(seed_mean ~ first_funding_at, data=mean_compare); abline(model) 
 summary(model) 
 ```
+### Can we seperate the chance of seed funding from the amount?
 
+```{r}
+# Add new columns
+first_funding_date_out$got_seed <- first_funding_date_out$seed > 0
+first_funding_date_out$log_seed <- log(first_funding_date_out$seed)
+first_funding_date_out[is.infinite(first_funding_date_out$log_seed),]$log_seed <- -9999999999999
+first_funding_date_with_seed <- first_funding_date_out[first_funding_date_out$got_seed == TRUE,]
+
+# Model seed chance
+annualData <- do.call(data.frame, aggregate(cbind(seed, got_seed, log_seed)  ~ first_funding_at, data=first_funding_date_out, FUN=mean))
+model.seed_chance <- lm(formula = got_seed ~ first_funding_at, data = annualData[annualData$first_funding_at >= 1990,])
+plot(got_seed ~ first_funding_at, data=annualData); abline(model.seed_chance) 
+print(summary(model.seed_chance))
+
+# Model seed amount
+annualData.with_seed <- do.call(data.frame, aggregate(cbind(seed, got_seed, log_seed)  ~ first_funding_at, data=first_funding_date_with_seed, FUN=mean))
+model.seed_amount <- lm(formula = seed ~ first_funding_at, data = annualData.with_seed)
+plot(seed ~ first_funding_at, data=annualData.with_seed); abline(model.seed_amount) 
+print(summary(model.seed_amount))
+
+# Model log seed amount
+model.seed_amount_log <- lm(formula = log_seed ~ first_funding_at, data = annualData.with_seed, na.action=na.omit)
+plot(log_seed ~ first_funding_at, data=annualData.with_seed); abline(model.seed_amount_log) 
+print(summary(model.seed_amount_log))
+```
