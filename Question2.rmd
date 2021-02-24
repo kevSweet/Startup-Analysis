@@ -48,6 +48,20 @@ mean_compare <- first_funding_date_out %>%
 model <- lm(formula = seed_mean ~ first_funding_at, data = mean_compare)
 plot(seed_mean ~ first_funding_at, data=mean_compare); abline(model) 
 summary(model) 
+
+#POLYNOMIAL REGRESSION
+#https://stats.stackexchange.com/questions/258307/raw-or-orthogonal-polynomial-regression for discussion on orthogonal polynomials.
+p2model <- lm(seed_mean ~ poly(first_funding_at, 2), data = mean_compare) #poly(first_funding_at, 2, raw=TRUE)
+p3model <- lm(seed_mean ~ poly(first_funding_at, 3), data = mean_compare)
+
+summary(p2model)
+summary(p3model)
+
+anova(p2model, p3model)
+
+plot(seed_mean ~ first_funding_at, data=mean_compare)
+points(mean_compare$first_funding_at, predict(p2model), type="l", col="red", lwd=2)
+points(mean_compare$first_funding_at, predict(p3model), type="l", col="blue", lwd=2)
 ```
 
 
