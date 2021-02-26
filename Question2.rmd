@@ -31,17 +31,8 @@ model <- lm(formula = inflationAdjustedSeed_1980 ~ first_funding_at, data = firs
 plot(inflationAdjustedSeed_1980 ~ first_funding_at, data=first_funding_date); abline(model) 
 summary(model) 
 
-# The outliers seem to be throwing things off.  Filter out anything greater than 5 SDs from mean
-outlier_metric <-  mean(first_funding_date$inflationAdjustedSeed_1980) + (5 * sd(first_funding_date$inflationAdjustedSeed_1980)) # six 9's of precision
-first_funding_date_out <- first_funding_date %>% 
-  filter(inflationAdjustedSeed_1980 < outlier_metric)
-
-model <- lm(formula = inflationAdjustedSeed_1980 ~ first_funding_at, data = first_funding_date_out)
-plot(inflationAdjustedSeed_1980 ~ first_funding_at, data=first_funding_date_out); abline(model) 
-summary(model) 
-
 # This looks like it could be skewed up by the larger number of rounds in later years.  Try comparing means instead
-mean_compare <- first_funding_date_out %>% 
+mean_compare <- first_funding_date %>% 
     group_by(first_funding_at) %>%
     dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
 
@@ -57,7 +48,7 @@ p3model <- lm(seed_mean ~ poly(first_funding_at, 3), data = mean_compare)
 summary(p2model)
 summary(p3model)
 
-anova(p2model, p3model)
+print(anova(p2model, p3model))
 
 plot(seed_mean ~ first_funding_at, data=mean_compare)
 points(mean_compare$first_funding_at, predict(p2model), type="l", col="red", lwd=2)
@@ -126,7 +117,20 @@ matplot(x, y, type="o", pch=1)
 
 annualData.skew <- do.call(data.frame, aggregate(seed  ~ first_funding_at, data=decompData_with_seed, FUN=skewness))
 plot(seed ~ first_funding_at, data=annualData.skew)
+
+
 ```
+
+Linear tests confirm, there is not evidence to reject that the 25th quantile is constant over time, while there is enough to reject that the 90th quantile is constant at the 0.05 significance level.
+
+```{r}
+model.25q <- lm(seed.25. ~ first_funding_at, data=annualData.quants)
+summary(model.25q)
+
+model.90q <- lm(seed.90. ~ first_funding_at, data=annualData.quants)
+summary(model.90q)
+```
+
 
 
 Looking at the inflation-adjusted log of seed money makes the trend more clear, with seed funding growing at about 9\% per year at the 0.01 significance level.
@@ -136,6 +140,16 @@ model.seed_amount_log <- lm(formula = log_seed ~ first_funding_at, data = annual
 plot(log_seed ~ first_funding_at, data=annualData.with_seed); abline(model.seed_amount_log) 
 print(summary(model.seed_amount_log))
 ```
+
+Or a Poisson regression without averaging by year.
+```{r}
+# Model poisson seed
+model.seed_amount_pois <- glm(formula = seed ~ first_funding_at, data = first_funding_date, family=poisson, na.action=na.omit)
+plot(seed ~ first_funding_at, data=first_funding_date, ylim=c(0,5000000))
+points(first_funding_date$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
+print(summary(model.seed_amount_pois))
+```
+
 
 This model also has better behaved residuals, appearing mostly normal.
 ```{r}
