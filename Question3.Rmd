@@ -61,9 +61,9 @@ We restrict the analysis to markets with at least 30 companies recorded.
 
 ```{r}
 industryList <- c('Travel','Transportation','Games','Music','Video','Finance','Cloud Computing','Health Care','Hospitality','Education')
-industryData <- do.call(data.frame, aggregate(cbind(funding_rounds, funding_total_usd, venture, seed)  ~ market, data=fundingData, FUN=function(x) c(mn = mean(x), var = var(x))))
-industryData$n <- aggregate(funding_total_usd  ~ market, data=fundingData, FUN=length)$funding_total_usd
-industryData <- subset(industryData, market %in% industryList)
+targetMarketData <- subset(fundingData, market %in% industryList)
+industryData <- do.call(data.frame, aggregate(cbind(funding_rounds, funding_total_usd, venture, seed)  ~ market, data=targetMarketData, FUN=function(x) c(mn = mean(x), var = var(x))))
+industryData$n <- aggregate(funding_total_usd  ~ market, data=targetMarketData, FUN=length)$funding_total_usd
 summary(industryData$funding_rounds.mn)
 ```
 
@@ -73,6 +73,22 @@ Variance does not seem to be consistent between industries.
 #Variance in rounds is not equal
 summary(industryData$funding_rounds.var)
 hist(industryData$funding_rounds.var)
+```
+
+By market model
+
+```{r}
+model <- lm(funding_total_usd.mn ~ funding_rounds.mn, data=industryData )
+summary(model)
+plot(model)
+```
+
+
+within market model
+```{r}
+model <- lm(venture ~ funding_rounds + market, data=targetMarketData )
+summary(model)
+plot(model)
 ```
 
 
