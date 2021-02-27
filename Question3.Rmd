@@ -28,6 +28,7 @@ lines(1:max(fundingData$funding_rounds), dnbinom(0:(max(fundingData$funding_roun
 ```
 
 
+
 The average amount of funding, when we only include rounds that received funding, increases steadily throughout the rounds, starting at an average of \$7 million in Round A and ending with an average $50 million in Round H. However, the most money raised in total is in Round B, due to the higher average than Round A combined with higher frequency than all later rounds.
 
 ```{r}
@@ -59,12 +60,11 @@ We restrict the analysis to markets with at least 30 companies recorded.
 
 
 ```{r}
+industryList <- c('Travel','Transportation','Games','Music','Video','Finance','Cloud Computing','Health Care','Hospitality','Education')
 industryData <- do.call(data.frame, aggregate(cbind(funding_rounds, funding_total_usd, venture, seed)  ~ market, data=fundingData, FUN=function(x) c(mn = mean(x), var = var(x))))
 industryData$n <- aggregate(funding_total_usd  ~ market, data=fundingData, FUN=length)$funding_total_usd
-industryData <- industryData[industryData$n >= 30,]
-industryData <- industryData[order(industryData$n, decreasing=TRUE),]
+industryData <- subset(industryData, market %in% industryList)
 summary(industryData$funding_rounds.mn)
-barplot(industryData$n[0:10], names.arg = industryData$market[0:10])
 ```
 
 Variance does not seem to be consistent between industries.
