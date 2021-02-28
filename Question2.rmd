@@ -149,7 +149,7 @@ print(summary(model.seed_amount_log))
 ```
 ## 2. Use Poisson regression to better describe this type of data.
 
-Let us try Poisson regression without averaging by year.
+Let us try Poisson regression *without* averaging by year.
 ```{r}
 # Model poisson seed
 model.seed_amount_pois <- glm(formula = seed ~ first_funding_at, data = first_funding_date, family=poisson, na.action=na.omit)
@@ -162,6 +162,19 @@ print(summary(model.seed_amount_pois))
 This model also has better behaved residuals, appearing mostly normal and shows lower levels of non-constant variance.
 ```{r}
 plot(model.seed_amount_log)
+```
+
+Let us try Poisson regression *with* averaging by year.
+```{r}
+# Model poisson seed
+mean_compare_pois <- first_funding_date %>% 
+    group_by(first_funding_at) %>%
+    dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
+
+model.seed_amount_pois <- glm(formula = seed_mean ~ first_funding_at, data = mean_compare_pois, family=poisson, na.action=na.omit)
+plot(seed_mean ~ first_funding_at, data = mean_compare_pois, ylim=c(0,5000000))
+points(mean_compare_pois$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
+print(summary(model.seed_amount_pois))
 ```
 
 ### THE FOLLOWING CAN BE DELETED. We are not using polynomial regression to stay within the scope of this class.
