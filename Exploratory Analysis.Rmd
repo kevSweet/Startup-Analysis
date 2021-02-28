@@ -8,8 +8,7 @@ First, we import the data, converting dates and numeric values where necessary.
 
 ```{r}
 # Import
-require(blscrapeR)
-data <- read.csv("investments_VC.csv")
+data <- read.csv("investments_VC.csv", strip.white=TRUE)
 
 # Convert Dates
 date_cols <- c("founded_at","first_funding_at","last_funding_at")
@@ -39,9 +38,6 @@ data <- data[data$country_code == "USA",]
 # After 1980
 data <- data[data$founded_year >= 1980 & !is.na(data$founded_year) ,]
 
-
-# Outliers
-data <- data[data$name != "Verizon Communications",]
 
 
 summary(data)

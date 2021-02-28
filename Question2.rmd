@@ -31,22 +31,128 @@ model <- lm(formula = inflationAdjustedSeed_1980 ~ first_funding_at, data = firs
 plot(inflationAdjustedSeed_1980 ~ first_funding_at, data=first_funding_date); abline(model) 
 summary(model) 
 
-# The outliers seem to be throwing things off.  Filter out anything greater than 5 SDs from mean
-outlier_metric <-  mean(first_funding_date$inflationAdjustedSeed_1980) + (5 * sd(first_funding_date$inflationAdjustedSeed_1980)) # six 9's of precision
-first_funding_date_out <- first_funding_date %>% 
-  filter(inflationAdjustedSeed_1980 < outlier_metric)
-
-model <- lm(formula = inflationAdjustedSeed_1980 ~ first_funding_at, data = first_funding_date_out)
-plot(inflationAdjustedSeed_1980 ~ first_funding_at, data=first_funding_date_out); abline(model) 
-summary(model) 
-
 # This looks like it could be skewed up by the larger number of rounds in later years.  Try comparing means instead
-mean_compare <- first_funding_date_out %>% 
+mean_compare <- first_funding_date %>% 
     group_by(first_funding_at) %>%
     dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
 
 model <- lm(formula = seed_mean ~ first_funding_at, data = mean_compare)
 plot(seed_mean ~ first_funding_at, data=mean_compare); abline(model) 
 summary(model) 
+
+#POLYNOMIAL REGRESSION
+#https://stats.stackexchange.com/questions/258307/raw-or-orthogonal-polynomial-regression for discussion on orthogonal polynomials.
+p2model <- lm(seed_mean ~ poly(first_funding_at, 2), data = mean_compare) #poly(first_funding_at, 2, raw=TRUE)
+p3model <- lm(seed_mean ~ poly(first_funding_at, 3), data = mean_compare)
+
+summary(p2model)
+summary(p3model)
+
+print(anova(p2model, p3model))
+
+plot(seed_mean ~ first_funding_at, data=mean_compare)
+points(mean_compare$first_funding_at, predict(p2model), type="l", col="red", lwd=2)
+points(mean_compare$first_funding_at, predict(p3model), type="l", col="blue", lwd=2)
+```
+
+
+### Can we seperate the chance of seed funding from the amount?
+
+```{r}
+# Add new columns
+decompData <- first_funding_date
+decompData$seed <- decompData$inflationAdjustedSeed_1980
+decompData$got_seed <- decompData$seed > 0
+decompData$log_seed <- log(decompData$seed)
+decompData[is.infinite(decompData$log_seed),]$log_seed <- -9999999999999
+decompData_with_seed <- decompData[decompData$got_seed == TRUE,]
+```
+
+
+There does not appear to be a change in the amount of seed funding given over time.
+```{r}
+# Model seed chance
+annualData <- do.call(data.frame, aggregate(cbind(seed, got_seed, log_seed)  ~ first_funding_at, data=decompData, FUN=mean))
+model.seed_chance <- lm(formula = got_seed ~ first_funding_at, data = annualData[annualData$first_funding_at >= 1990,])
+summary(model.seed_chance)
+plot(got_seed ~ first_funding_at, data=annualData); abline(model.seed_chance) 
+```
+
+
+
+
+However, the inflation-adjusted amount of seed money raised increases over time with an average of $105.5 thousand a year,  at the 0.05 significance level. 
+```{r}
+# Model seed amount
+annualData.with_seed <- do.call(data.frame, aggregate(cbind(seed, got_seed, log_seed)  ~ first_funding_at, data=decompData_with_seed, FUN=mean))
+model.seed_amount <- lm(formula = seed ~ first_funding_at, data = annualData.with_seed)
+summary(model.seed_amount)
+plot(seed ~ first_funding_at, data=annualData.with_seed); abline(model.seed_amount) 
+```
+
+However, the residuals deviate significantly from normal on the high end, so this model may not be valid.
+
+```{r}
+plot(model.seed_amount)
+```
+
+Here we also see a case of Simpsons Paradox, where grouping the data reverses the apparent trend. If we look at all non-zero data points, not grouped by year, we get a negative relationship.
+
+```{r}
+# Model seed amount
+model.seed_amount_ungrouped <- lm(formula = seed ~ first_funding_at, data = decompData_with_seed)
+summary(model.seed_amount_ungrouped)
+plot(seed ~ first_funding_at, data=decompData_with_seed, ylim=c(0, 10000000)); abline(model.seed_amount_ungrouped)
+```
+
+Closer examination shows that this is caused by a growing skewness in the data. Note how the higher quantiles grow more quickly in recent years, while the lower remain stable. Skewness also clearly grows year to year.
+
+
+```{r}
+library(e1071) 
+annualData.quants <- do.call(data.frame, aggregate(seed  ~ first_funding_at, data=decompData_with_seed, FUN=function(x){quantile(x, probs=c(0.25, 0.5, 0.75, 0.9))}))
+x <- cbind(annualData.quants$first_funding_at, annualData.quants$first_funding_at, annualData.quants$first_funding_at, annualData.quants$first_funding_at)
+y <- cbind(annualData.quants$seed.25., annualData.quants$seed.50., annualData.quants$seed.75., annualData.quants$seed.90. )
+matplot(x, y, type="o", pch=1)
+
+annualData.skew <- do.call(data.frame, aggregate(seed  ~ first_funding_at, data=decompData_with_seed, FUN=skewness))
+plot(seed ~ first_funding_at, data=annualData.skew)
+
+
+```
+
+Linear tests confirm, there is not evidence to reject that the 25th quantile is constant over time, while there is enough to reject that the 90th quantile is constant at the 0.05 significance level.
+
+```{r}
+model.25q <- lm(seed.25. ~ first_funding_at, data=annualData.quants)
+summary(model.25q)
+
+model.90q <- lm(seed.90. ~ first_funding_at, data=annualData.quants)
+summary(model.90q)
+```
+
+
+
+Looking at the inflation-adjusted log of seed money makes the trend more clear, with seed funding growing at about 9\% per year at the 0.01 significance level.
+```{r}
+# Model log seed amount
+model.seed_amount_log <- lm(formula = log_seed ~ first_funding_at, data = annualData.with_seed, na.action=na.omit)
+plot(log_seed ~ first_funding_at, data=annualData.with_seed); abline(model.seed_amount_log) 
+print(summary(model.seed_amount_log))
+```
+
+Or a Poisson regression without averaging by year.
+```{r}
+# Model poisson seed
+model.seed_amount_pois <- glm(formula = seed ~ first_funding_at, data = first_funding_date, family=poisson, na.action=na.omit)
+plot(seed ~ first_funding_at, data=first_funding_date, ylim=c(0,5000000))
+points(first_funding_date$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
+print(summary(model.seed_amount_pois))
+```
+
+
+This model also has better behaved residuals, appearing mostly normal.
+```{r}
+plot(model.seed_amount_log)
 ```
 
