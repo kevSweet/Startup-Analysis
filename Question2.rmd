@@ -1,9 +1,12 @@
 ---
 title: "Question 2"
+subtitle: "Can we describe the relationship between the amount of seed funding and the year of first funding received?"
 author: "Jonathan Kerr"
 date: "18/02/2021"
 output: html_document
 ---
+
+*Our question is based on exploring if the amounts of investments going into start-up companies over the years have steadily increased or not. We will explore if the relationship between the amount of seed funding and the year of obtaining those funds is linear or some other form of relationship.*
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -11,16 +14,19 @@ require(dplyr)
 kaggle_data_cleaned <- readRDS("kaggle_data_cleaned.rds")
 ```
 
-### Check if data appears linear for total amount of money raised (Question 2)
+Let's take a quick look at the "first_funding_at" data.  
 
 ```{r}
 # EDA
 eda <- kaggle_data_cleaned %>% 
-  select(first_funding_at) %>% 
-  arrange(first_funding_at)
+  dplyr::select(first_funding_at) %>% 
+  dplyr::arrange(first_funding_at)
 head(eda)
+```
 
-# bucket first_funding_at by year and filter bad data (funding 0011)
+Let's bucket the 'first_funding_at' by year and filter bad data (funding year 0011) and also use the data that we have adjusted for inflation. 
+
+```{r}
 first_year <- 1980
 first_funding_date <- kaggle_data_cleaned %>% 
   mutate(first_funding_at = as.numeric(substring(first_funding_at, 1,4)) ) %>% 
@@ -30,8 +36,10 @@ first_funding_date <- kaggle_data_cleaned %>%
 model <- lm(formula = inflationAdjustedSeed_1980 ~ first_funding_at, data = first_funding_date)
 plot(inflationAdjustedSeed_1980 ~ first_funding_at, data=first_funding_date); abline(model) 
 summary(model) 
+```
+This looks like it could be skewed up by the larger number of rounds in later years. So we can try comparing means instead.
 
-# This looks like it could be skewed up by the larger number of rounds in later years.  Try comparing means instead
+```{r}
 mean_compare <- first_funding_date %>% 
     group_by(first_funding_at) %>%
     dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
@@ -39,37 +47,40 @@ mean_compare <- first_funding_date %>%
 model <- lm(formula = seed_mean ~ first_funding_at, data = mean_compare)
 plot(seed_mean ~ first_funding_at, data=mean_compare); abline(model) 
 summary(model) 
-
-#POLYNOMIAL REGRESSION
-#https://stats.stackexchange.com/questions/258307/raw-or-orthogonal-polynomial-regression for discussion on orthogonal polynomials.
-p2model <- lm(seed_mean ~ poly(first_funding_at, 2), data = mean_compare) #poly(first_funding_at, 2, raw=TRUE)
-p3model <- lm(seed_mean ~ poly(first_funding_at, 3), data = mean_compare)
-
-summary(p2model)
-summary(p3model)
-
-print(anova(p2model, p3model))
-
-plot(seed_mean ~ first_funding_at, data=mean_compare)
-points(mean_compare$first_funding_at, predict(p2model), type="l", col="red", lwd=2)
-points(mean_compare$first_funding_at, predict(p3model), type="l", col="blue", lwd=2)
 ```
+From the above we are able to fit a linear model to the data and it looks like there is a linear trend.
+The p-value allows us to reject the null hypothesis that the regression coefficient is zero.  
 
+However, the model is not the best fit given the unsatisfactorily low R-squared value.
+Let's take a look at the residuals plots.
+```{r}
+plot(model)
+```
+It's quite clear that the constant variance assumption for linear regression is not met which gives us enough reason to invalidate our linear model.
+
+**We realized that when dealing with very large values like monies in company funding we can not capture the necessary relationship to model the data and make relative comparisons without making a transformation to the data.**
+
+There are two way we can work with this data.
+1. Use a log transform on the fields that include funding amounts and perform linear regression, or
+2. Use Poisson regression to better describe this type of data. 
+
+## 1. Log transforms on the seed funding data and exploring seed funding chance.    
 
 ### Can we seperate the chance of seed funding from the amount?
 
+Let us transform our data taking the log(seed_funding) for the companies that received seed funding amounts.
 ```{r}
-# Add new columns
+# Add the required new columns
 decompData <- first_funding_date
 decompData$seed <- decompData$inflationAdjustedSeed_1980
 decompData$got_seed <- decompData$seed > 0
 decompData$log_seed <- log(decompData$seed)
 decompData[is.infinite(decompData$log_seed),]$log_seed <- -9999999999999
 decompData_with_seed <- decompData[decompData$got_seed == TRUE,]
+data.frame(decompData$first_funding_at, decompData$inflationAdjustedSeed_1980, decompData$log_seed, decompData$log_seed)
 ```
 
-
-There does not appear to be a change in the amount of seed funding given over time.
+Let us look at the transformed seed data over time.
 ```{r}
 # Model seed chance
 annualData <- do.call(data.frame, aggregate(cbind(seed, got_seed, log_seed)  ~ first_funding_at, data=decompData, FUN=mean))
@@ -77,11 +88,9 @@ model.seed_chance <- lm(formula = got_seed ~ first_funding_at, data = annualData
 summary(model.seed_chance)
 plot(got_seed ~ first_funding_at, data=annualData); abline(model.seed_chance) 
 ```
+*There does not appear to be a change in the amount of seed funding given over time. There is no significant linear relationship.*  
 
-
-
-
-However, the inflation-adjusted amount of seed money raised increases over time with an average of $105.5 thousand a year,  at the 0.05 significance level. 
+However, the inflation-adjusted amount of seed money raised increases over time with an average of $105.5(thousand) a year,  at the 0.05 significance level.
 ```{r}
 # Model seed amount
 annualData.with_seed <- do.call(data.frame, aggregate(cbind(seed, got_seed, log_seed)  ~ first_funding_at, data=decompData_with_seed, FUN=mean))
@@ -90,13 +99,13 @@ summary(model.seed_amount)
 plot(seed ~ first_funding_at, data=annualData.with_seed); abline(model.seed_amount) 
 ```
 
-However, the residuals deviate significantly from normal on the high end, so this model may not be valid.
+*The residuals deviate significantly from normal on the high end, so this model may not be valid. (As shown below.)*
 
 ```{r}
 plot(model.seed_amount)
 ```
 
-Here we also see a case of Simpsons Paradox, where grouping the data reverses the apparent trend. If we look at all non-zero data points, not grouped by year, we get a negative relationship.
+Here we also see a case of Simpsons Paradox, where grouping the data reverses the apparent trend. If we look at all non-zero data points, not grouped by year, we get a negative relationship, as shown below.
 
 ```{r}
 # Model seed amount
@@ -131,8 +140,6 @@ model.90q <- lm(seed.90. ~ first_funding_at, data=annualData.quants)
 summary(model.90q)
 ```
 
-
-
 Looking at the inflation-adjusted log of seed money makes the trend more clear, with seed funding growing at about 9\% per year at the 0.01 significance level.
 ```{r}
 # Model log seed amount
@@ -140,8 +147,9 @@ model.seed_amount_log <- lm(formula = log_seed ~ first_funding_at, data = annual
 plot(log_seed ~ first_funding_at, data=annualData.with_seed); abline(model.seed_amount_log) 
 print(summary(model.seed_amount_log))
 ```
+## 2. Use Poisson regression to better describe this type of data.
 
-Or a Poisson regression without averaging by year.
+Let us try Poisson regression without averaging by year.
 ```{r}
 # Model poisson seed
 model.seed_amount_pois <- glm(formula = seed ~ first_funding_at, data = first_funding_date, family=poisson, na.action=na.omit)
@@ -151,8 +159,24 @@ print(summary(model.seed_amount_pois))
 ```
 
 
-This model also has better behaved residuals, appearing mostly normal.
+This model also has better behaved residuals, appearing mostly normal and shows lower levels of non-constant variance.
 ```{r}
 plot(model.seed_amount_log)
 ```
 
+### THE FOLLOWING CAN BE DELETED. We are not using polynomial regression to stay within the scope of this class.
+```
+#POLYNOMIAL REGRESSION
+#https://stats.stackexchange.com/questions/258307/raw-or-orthogonal-polynomial-regression for discussion on orthogonal polynomials.
+p2model <- lm(seed_mean ~ poly(first_funding_at, 2), data = mean_compare) #poly(first_funding_at, 2, raw=TRUE)
+p3model <- lm(seed_mean ~ poly(first_funding_at, 3), data = mean_compare)
+
+summary(p2model)
+summary(p3model)
+
+print(anova(p2model, p3model))
+
+plot(seed_mean ~ first_funding_at, data=mean_compare)
+points(mean_compare$first_funding_at, predict(p2model), type="l", col="red", lwd=2)
+points(mean_compare$first_funding_at, predict(p3model), type="l", col="blue", lwd=2)
+```
