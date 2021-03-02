@@ -51,7 +51,7 @@ summary(model)
 From the above we are able to fit a linear model to the data and it looks like there is a linear trend.
 The p-value allows us to reject the null hypothesis that the regression coefficient is zero.  
 
-However, the model is not the best fit given the unsatisfactorily low R-squared value.
+However, the model is not the best fit given the unsatisfactorily low R-squared value and strong evidence of non-constant variance in the residuals.
 Let's take a look at the residuals plots.
 ```{r}
 plot(model)
@@ -66,7 +66,7 @@ There are two way we can work with this data.
 
 ## 1. Log transforms on the seed funding data and exploring seed funding chance.    
 
-### Can we seperate the chance of seed funding from the amount?
+### Can we separate the chance of seed funding from the amount?
 
 Let us transform our data taking the log(seed_funding) for the companies that received seed funding amounts.
 ```{r}
@@ -77,7 +77,7 @@ decompData$got_seed <- decompData$seed > 0
 decompData$log_seed <- log(decompData$seed)
 decompData[is.infinite(decompData$log_seed),]$log_seed <- -9999999999999
 decompData_with_seed <- decompData[decompData$got_seed == TRUE,]
-data.frame(decompData$first_funding_at, decompData$inflationAdjustedSeed_1980, decompData$log_seed, decompData$log_seed)
+summary(decompData[c('first_funding_at', 'seed', 'log_seed','got_seed')])
 ```
 
 Let us look at the transformed seed data over time.
@@ -89,6 +89,11 @@ summary(model.seed_chance)
 plot(got_seed ~ first_funding_at, data=annualData); abline(model.seed_chance) 
 ```
 *There does not appear to be a change in the amount of seed funding given over time. There is no significant linear relationship.*  
+ Residuals appears generally normal, and with close to constant variance.
+```{r}
+plot(model.seed_chance)
+```
+
 
 However, the inflation-adjusted amount of seed money raised increases over time with an average of $105.5(thousand) a year,  at the 0.05 significance level.
 ```{r}
@@ -149,12 +154,13 @@ print(summary(model.seed_amount_log))
 ```
 ## 2. Use Poisson regression to better describe this type of data.
 
-Let us try Poisson regression *without* averaging by year.
+Let us try Poisson regression *without* averaging by year. This indicates about 13.5\% annual growth in seed funding.
 ```{r}
 # Model poisson seed
 model.seed_amount_pois <- glm(formula = seed ~ first_funding_at, data = first_funding_date, family=poisson, na.action=na.omit)
 plot(seed ~ first_funding_at, data=first_funding_date, ylim=c(0,5000000))
-points(first_funding_date$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
+x <- seq(from=1980, to=2015,by=1)
+points(x, exp(predict(model.seed_amount_pois, newdata = data.frame(first_funding_at=x))), type="l", col="red", lwd=2)
 print(summary(model.seed_amount_pois))
 ```
 
@@ -164,17 +170,21 @@ This model also has better behaved residuals, appearing mostly normal and shows 
 plot(model.seed_amount_log)
 ```
 
-Let us try Poisson regression *with* averaging by year.
+We cannot average by year with a Poisson model because we require integer values. We jsut plot the original model with cleaned data points.
 ```{r}
 # Model poisson seed
-mean_compare_pois <- first_funding_date %>% 
-    group_by(first_funding_at) %>%
-    dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
+plot(seed ~ first_funding_at, data=annualData, ylim=c(0,5000000))
+x <- seq(from=1980, to=2015,by=1)
+points(x, exp(predict(model.seed_amount_pois, newdata = data.frame(first_funding_at=x))), type="l", col="red", lwd=2)
 
-model.seed_amount_pois <- glm(formula = seed_mean ~ first_funding_at, data = mean_compare_pois, family=poisson, na.action=na.omit)
-plot(seed_mean ~ first_funding_at, data = mean_compare_pois, ylim=c(0,5000000))
-points(mean_compare_pois$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
-print(summary(model.seed_amount_pois))
+#mean_compare_pois <- first_funding_date %>% 
+    #group_by(first_funding_at) %>%
+    #dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
+
+#model.seed_amount_pois <- glm(formula = seed_mean ~ first_funding_at, data = mean_compare_pois, family=poisson, na.action=na.omit)
+#plot(seed_mean ~ first_funding_at, data = mean_compare_pois, ylim=c(0,5000000))
+#points(mean_compare_pois$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
+#print(summary(model.seed_amount_pois))
 ```
 
 ### THE FOLLOWING CAN BE DELETED. We are not using polynomial regression to stay within the scope of this class.
