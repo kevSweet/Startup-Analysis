@@ -36,6 +36,7 @@ first_funding_date <- kaggle_data_cleaned %>%
 model <- lm(formula = inflationAdjustedSeed_1980 ~ first_funding_at, data = first_funding_date)
 plot(inflationAdjustedSeed_1980 ~ first_funding_at, data=first_funding_date); abline(model) 
 summary(model) 
+plot(model)
 ```
 This looks like it could be skewed up by the larger number of rounds in later years. So we can try comparing means instead.
 
@@ -86,7 +87,7 @@ Let us look at the transformed seed data over time.
 annualData <- do.call(data.frame, aggregate(cbind(seed, got_seed, log_seed)  ~ first_funding_at, data=decompData, FUN=mean))
 model.seed_chance <- lm(formula = got_seed ~ first_funding_at, data = annualData[annualData$first_funding_at >= 1990,])
 summary(model.seed_chance)
-plot(got_seed ~ first_funding_at, data=annualData); abline(model.seed_chance) 
+plot(got_seed ~ first_funding_at, data=annualData, ylab='% receiving seed'); abline(model.seed_chance) 
 ```
 *There does not appear to be a change in the amount of seed funding given over time. There is no significant linear relationship.*  
  Residuals appears generally normal, and with close to constant variance.
@@ -125,9 +126,10 @@ Closer examination shows that this is caused by a growing skewness in the data. 
 ```{r}
 library(e1071) 
 annualData.quants <- do.call(data.frame, aggregate(seed  ~ first_funding_at, data=decompData_with_seed, FUN=function(x){quantile(x, probs=c(0.25, 0.5, 0.75, 0.9))}))
-x <- cbind(annualData.quants$first_funding_at, annualData.quants$first_funding_at, annualData.quants$first_funding_at, annualData.quants$first_funding_at)
-y <- cbind(annualData.quants$seed.25., annualData.quants$seed.50., annualData.quants$seed.75., annualData.quants$seed.90. )
-matplot(x, y, type="o", pch=1)
+year <- cbind(annualData.quants$first_funding_at, annualData.quants$first_funding_at, annualData.quants$first_funding_at, annualData.quants$first_funding_at)
+seed <- cbind(annualData.quants$seed.25., annualData.quants$seed.50., annualData.quants$seed.75., annualData.quants$seed.90. )
+matplot(year, seed, type="o", pch=1)
+legend(1985,15000000,legend=c('90th percentile','75th percentile','50th percentile','25th percentile'), col=c('blue','green','red','black'), lty=2)
 
 annualData.skew <- do.call(data.frame, aggregate(seed  ~ first_funding_at, data=decompData_with_seed, FUN=skewness))
 plot(seed ~ first_funding_at, data=annualData.skew)
@@ -140,9 +142,11 @@ Linear tests confirm, there is not evidence to reject that the 25th quantile is 
 ```{r}
 model.25q <- lm(seed.25. ~ first_funding_at, data=annualData.quants)
 summary(model.25q)
+plot(model.25q)
 
 model.90q <- lm(seed.90. ~ first_funding_at, data=annualData.quants)
 summary(model.90q)
+plot(model.90q)
 ```
 
 Looking at the inflation-adjusted log of seed money makes the trend more clear, with seed funding growing at about 9\% per year at the 0.01 significance level.
@@ -156,12 +160,16 @@ print(summary(model.seed_amount_log))
 
 Let us try Poisson regression *without* averaging by year. This indicates about 13.5\% annual growth in seed funding.
 ```{r}
+library("sandwich")
 # Model poisson seed
 model.seed_amount_pois <- glm(formula = seed ~ first_funding_at, data = first_funding_date, family=poisson, na.action=na.omit)
 plot(seed ~ first_funding_at, data=first_funding_date, ylim=c(0,5000000))
 x <- seq(from=1980, to=2015,by=1)
 points(x, exp(predict(model.seed_amount_pois, newdata = data.frame(first_funding_at=x))), type="l", col="red", lwd=2)
 print(summary(model.seed_amount_pois))
+disp <- var(first_funding_date$seed)/mean(first_funding_date$seed)
+print(summary(model.seed_amount_pois, dispersion=disp))
+
 ```
 
 
@@ -173,7 +181,7 @@ plot(model.seed_amount_log)
 We cannot average by year with a Poisson model because we require integer values. We jsut plot the original model with cleaned data points.
 ```{r}
 # Model poisson seed
-plot(seed ~ first_funding_at, data=annualData, ylim=c(0,5000000))
+plot(seed ~ first_funding_at, data=annualData, ylim=c(0,3000000))
 x <- seq(from=1980, to=2015,by=1)
 points(x, exp(predict(model.seed_amount_pois, newdata = data.frame(first_funding_at=x))), type="l", col="red", lwd=2)
 
