@@ -7,6 +7,7 @@ output: html_notebook
 First, we import the data, converting dates and numeric values where necessary.
 
 ```{r}
+library(blscrapeR)
 # Import
 data <- read.csv("investments_VC.csv", strip.white=TRUE)
 
