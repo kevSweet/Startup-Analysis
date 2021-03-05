@@ -125,11 +125,11 @@ Closer examination shows that this is caused by a growing skewness in the data. 
 
 ```{r}
 library(e1071) 
-annualData.quants <- do.call(data.frame, aggregate(seed  ~ first_funding_at, data=decompData_with_seed, FUN=function(x){quantile(x, probs=c(0.25, 0.5, 0.75, 0.9))}))
+annualData.quants <- do.call(data.frame, aggregate(seed/1000000  ~ first_funding_at, data=decompData_with_seed, FUN=function(x){quantile(x, probs=c(0.25, 0.5, 0.75, 0.9))}))
 year <- cbind(annualData.quants$first_funding_at, annualData.quants$first_funding_at, annualData.quants$first_funding_at, annualData.quants$first_funding_at)
-seed <- cbind(annualData.quants$seed.25., annualData.quants$seed.50., annualData.quants$seed.75., annualData.quants$seed.90. )
-matplot(year, seed, type="o", pch=1)
-legend(1985,15000000,legend=c('90th percentile','75th percentile','50th percentile','25th percentile'), col=c('blue','green','red','black'), lty=2)
+seed <- annualData.quants[,2:5]#cbind(annualData.quants[,1], annualData.quants[,2], annualData.quants$seed.75., annualData.quants$seed.90. )
+matplot(year, seed, type="o", pch=1, ylab='$ million')
+legend(1985,150,legend=c('90th percentile','75th percentile','50th percentile','25th percentile'), col=c('blue','green','red','black'), lty=2)
 
 annualData.skew <- do.call(data.frame, aggregate(seed  ~ first_funding_at, data=decompData_with_seed, FUN=skewness))
 plot(seed ~ first_funding_at, data=annualData.skew)
@@ -140,11 +140,11 @@ plot(seed ~ first_funding_at, data=annualData.skew)
 Linear tests confirm, there is not evidence to reject that the 25th quantile is constant over time, while there is enough to reject that the 90th quantile is constant at the 0.05 significance level.
 
 ```{r}
-model.25q <- lm(seed.25. ~ first_funding_at, data=annualData.quants)
+model.25q <- lm(seed.1e.06.25. ~ first_funding_at, data=annualData.quants)
 summary(model.25q)
 plot(model.25q)
 
-model.90q <- lm(seed.90. ~ first_funding_at, data=annualData.quants)
+model.90q <- lm(seed.1e.06.90. ~ first_funding_at, data=annualData.quants)
 summary(model.90q)
 plot(model.90q)
 ```
@@ -180,19 +180,21 @@ plot(model.seed_amount_log)
 
 We cannot average by year with a Poisson model because we require integer values. We jsut plot the original model with cleaned data points.
 ```{r}
+mean_compare_pois <- first_funding_date %>%
+    group_by(first_funding_at) %>%
+    dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
+
+model.seed_amount_pois <- glm(formula = seed_mean ~ first_funding_at, data = mean_compare_pois, family=poisson, na.action=na.omit)
+plot(seed_mean ~ first_funding_at, data = mean_compare_pois, ylim=c(0,5000000))
+points(mean_compare_pois$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
+print(summary(model.seed_amount_pois))
+
 # Model poisson seed
-plot(seed ~ first_funding_at, data=annualData, ylim=c(0,3000000))
+plot(seed/1000000 ~ first_funding_at, data=annualData, ylim=c(0,3), ylab='$ million')
 x <- seq(from=1980, to=2015,by=1)
-points(x, exp(predict(model.seed_amount_pois, newdata = data.frame(first_funding_at=x))), type="l", col="red", lwd=2)
+points(x, exp(predict(model.seed_amount_pois, newdata = data.frame(first_funding_at=x)))/1000000, type="l", col="red", lwd=2)
 
-#mean_compare_pois <- first_funding_date %>% 
-    #group_by(first_funding_at) %>%
-    #dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
 
-#model.seed_amount_pois <- glm(formula = seed_mean ~ first_funding_at, data = mean_compare_pois, family=poisson, na.action=na.omit)
-#plot(seed_mean ~ first_funding_at, data = mean_compare_pois, ylim=c(0,5000000))
-#points(mean_compare_pois$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
-#print(summary(model.seed_amount_pois))
 ```
 
 ### THE FOLLOWING CAN BE DELETED. We are not using polynomial regression to stay within the scope of this class.
