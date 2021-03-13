@@ -115,7 +115,7 @@ Here we also see a case of Simpsons Paradox, where grouping the data reverses th
 
 ```{r}
 # Model seed amount
-model.seed_amount_ungrouped <- lm(formula = seed ~ first_funding_at, data = decompData_with_seed)
+model.seed_amount_ungrouped <- lm(formula = log_seed ~ first_funding_at, data = decompData_with_seed)
 summary(model.seed_amount_ungrouped)
 plot(seed ~ first_funding_at, data=decompData_with_seed, ylim=c(0, 10000000)); abline(model.seed_amount_ungrouped)
 ```
@@ -166,50 +166,45 @@ model.seed_amount_pois <- glm(formula = seed ~ first_funding_at, data = first_fu
 plot(seed ~ first_funding_at, data=first_funding_date, ylim=c(0,5000000))
 x <- seq(from=1980, to=2015,by=1)
 points(x, exp(predict(model.seed_amount_pois, newdata = data.frame(first_funding_at=x))), type="l", col="red", lwd=2)
-print(summary(model.seed_amount_pois))
-disp <- var(first_funding_date$seed)/mean(first_funding_date$seed)
-print(summary(model.seed_amount_pois, dispersion=disp))
+
+D=summary(model.seed_amount_pois)$deviance
+df=summary(model.seed_amount_pois)$df.residual
+print(summary(model.seed_amount_pois, dispersion=D/df))
 
 ```
 
 
 This model also has better behaved residuals, appearing mostly normal and shows lower levels of non-constant variance.
 ```{r}
-plot(model.seed_amount_log)
+plot(model.seed_amount_pois)
 ```
 
-We cannot average by year with a Poisson model because we require integer values. We jsut plot the original model with cleaned data points.
 ```{r}
 mean_compare_pois <- first_funding_date %>%
     group_by(first_funding_at) %>%
     dplyr::summarize(seed_mean = mean(inflationAdjustedSeed_1980, na.rm=TRUE))
 
-model.seed_amount_pois <- glm(formula = seed_mean ~ first_funding_at, data = mean_compare_pois, family=poisson, na.action=na.omit)
-plot(seed_mean ~ first_funding_at, data = mean_compare_pois, ylim=c(0,5000000))
-points(mean_compare_pois$first_funding_at, exp(predict(model.seed_amount_pois)), type="l", col="red", lwd=2)
-print(summary(model.seed_amount_pois))
+model.seed_amount_pois_annual <- glm(formula = seed_mean ~ first_funding_at, data = mean_compare_pois, family=poisson, na.action=na.omit)
+D=summary(model.seed_amount_pois_annual)$deviance
+df=summary(model.seed_amount_pois_annual)$df.residual
+summary(model.seed_amount_pois,dispersion=D/df )
 
 # Model poisson seed
 plot(seed/1000000 ~ first_funding_at, data=annualData, ylim=c(0,3), ylab='$ million')
-x <- seq(from=1980, to=2015,by=1)
-points(x, exp(predict(model.seed_amount_pois, newdata = data.frame(first_funding_at=x)))/1000000, type="l", col="red", lwd=2)
-
+points(annualData$first_funding_at, exp(predict(model.seed_amount_pois_annual, newdata = annualData))/1000000, type="l", col="red", lwd=2)
+points(annualData$first_funding_at, exp(predict(model.seed_amount_pois, newdata = annualData))/1000000, type="l", col="blue", lwd=2)
 
 ```
 
-### THE FOLLOWING CAN BE DELETED. We are not using polynomial regression to stay within the scope of this class.
+### Is 35 enough samples for Poisson Regression
+```{r}
+lambda <- mean(mean_compare_pois$seed_mean)
+years <- seq(from=1980, to=2014)
+n <- 100000
+disp <- 163438
+trails <- replicate(100000, exp(-2.426e+02 + years*1.270e-01 + rnorm(0, disp)))
+pvals <- 
 ```
-#POLYNOMIAL REGRESSION
-#https://stats.stackexchange.com/questions/258307/raw-or-orthogonal-polynomial-regression for discussion on orthogonal polynomials.
-p2model <- lm(seed_mean ~ poly(first_funding_at, 2), data = mean_compare) #poly(first_funding_at, 2, raw=TRUE)
-p3model <- lm(seed_mean ~ poly(first_funding_at, 3), data = mean_compare)
+```{r}
 
-summary(p2model)
-summary(p3model)
-
-print(anova(p2model, p3model))
-
-plot(seed_mean ~ first_funding_at, data=mean_compare)
-points(mean_compare$first_funding_at, predict(p2model), type="l", col="red", lwd=2)
-points(mean_compare$first_funding_at, predict(p3model), type="l", col="blue", lwd=2)
 ```
