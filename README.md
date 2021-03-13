@@ -7,11 +7,12 @@ Developing a new business takes time, money, and expertise.  Accelerating its gr
 
 This study will examine relationships between various features of the fundraising process (such as amount and type of money raised), how financing differs between industries, and whether seed funding is a good predictor of venture funding.
 
- We will be attempting to answer the following questions using statistical analysis:
-Is the average amount of money raised correlated with the industry the company is in?
-Can a company expect to have more financing rounds if they’re in a particular industry?
-Does the amount of money raised in the seed round correlate with the year it was raised?
-Does the proportion of companies that get seed funding also get venture funding?
+We will be attempting to answer the following questions using statistical analysis:
+
+1. Is the average amount of money raised correlated with the industry the company is in?
+2. Can a company expect to have more financing rounds if they’re in a particular industry?
+3. Does the amount of money raised in the seed round correlate with the year it was raised?
+4. Does the proportion of companies that get seed funding also get venture funding?
 
 ## Dataset Description
 Our original source of data is Crunchbase. Although we haven’t directly used any Crunchbase APIs to obtain this data, we obtained it via a secondary source on kaggle. Crunchbase is a platform for finding business information about private and public companies. Crunchbase information includes investments and funding information, founding members and individuals in leadership positions, mergers and acquisitions, news, and industry trends. Originally built to track startups, the Crunchbase website contains information on public and private companies on a global scale.
