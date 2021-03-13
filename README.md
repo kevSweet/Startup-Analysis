@@ -48,7 +48,7 @@ Below is a tree representation of our github repository:
 │       kaggle_data_cleaned.rds
 │
 ├───Documentation
-│       Funding a Start-up Presentation (1) (1).pptx
+│       Funding a Start-up Presentation.pptx
 │
 ├───EDA
 │       CheckAnalysisAssumptions.Rmd
