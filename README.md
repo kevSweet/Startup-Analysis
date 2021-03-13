@@ -1,5 +1,5 @@
 # Funding a Start-up:
-### Evaluating the Business Impact of Funding Types, Sources, Amounts and Timing
+## Evaluating the Business Impact of Funding Types, Sources, Amounts and Timing
 ### Authors: Caleb Case | Aaliyah Fiala | Jonathan Kerr | Sai Muktevi | Kevin Sweet
 
 ## Introduction
