@@ -86,9 +86,7 @@ log_boxplot + geom_boxplot()
 ## Performing Analysis
 
 ```{r, echo = T}
-market <- d$market
-funding <- d$funding_log
-summary(aov(funding ~ market))
+summary(aov(funding_log ~ market, data=d))
 ```
 Using an ANOVA F-Test with $\alpha = 0.05$, we find evidence to reject the null hypothesis, and conclude that there is a difference in the funding total between the industries of interest.
 
@@ -96,21 +94,13 @@ Using an ANOVA F-Test with $\alpha = 0.05$, we find evidence to reject the null 
 ### Visualising Differences
 ```{r, echo = T}
 #Plot the average funding amounts for each market
-for (market in markets) {
-  m <- d[d$market == market, ]
-  cat(market, "average funding amount: $", mean(m$funding_total_usd), "\n")
-}
+funding_means <- aggregate(funding_total_usd ~ market, data=d, FUN=mean)
+funding_means$market <- with(funding_means, reorder(market, funding_total_usd))
+print(funding_means)
+print(with(funding_means,c(max(funding_total_usd) - mean(funding_total_usd), max(funding_total_usd) / mean(funding_total_usd))))
 
-#plotting means of samples (for each category)
-means_data = c()
-for(i in markets){
-  temp = d[d$market == i,]
-  means_data <- c(mean(temp$funding_total_usd), means_data)
-}
-means_data = as.data.frame(means_data)
-means <- data.frame(markets, means_data)
-
-ggplot(means, aes(x = reorder(markets, -means_data), y = means_data)) + geom_bar(stat = "identity") + labs(title = "Average Funding Total by Industry", x = "", y = "")
+ggplot(funding_means, aes(x = market, y = funding_total_usd/1000000)) + geom_bar(stat="identity", fill="lightblue") + coord_flip() + labs(title = "Average Funding Total by Industry", x = "", y = "$ million") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ```
 
 
@@ -120,15 +110,14 @@ The number of rounds ranges from 1 to 18. Most firms had just one round, and the
 
 ```{r, echo = T}
 #plotting means of samples (for each category)
-means_data = c()
-for(market in markets){
-  temp = d[d$market == market,]
-  means_data <- c(mean(temp$funding_rounds), means_data)
-}
-means_data = as.data.frame(means_data)
-means <- data.frame(markets, means_data)
-summary(means)
-ggplot(means, aes(x = reorder(markets, -means_data), y = means_data)) + geom_bar(stat = "identity") + labs(title = "Average Number of Rounds by Industry", x = "", y = "")
+funding_rounds <- aggregate(funding_rounds ~ market, data=d, FUN=mean)
+funding_rounds$market <- with(funding_rounds, reorder(market, funding_rounds))
+print(funding_rounds)
+print(with(funding_rounds,c(max(funding_rounds) - mean(funding_rounds), max(funding_rounds) / mean(funding_rounds))))
+
+#Plot the average funding amounts for each market
+ggplot(funding_rounds, aes(x = market, y = funding_rounds)) + geom_bar(stat="identity", fill="lightblue") + coord_flip() + labs(title = "Average Number of Rounds by Industry", x = "", y = "") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ```
 
 Checking assumption of equal variance: 
@@ -141,9 +130,18 @@ boxplot + geom_boxplot()
 
 Performing ANOVA F-Test:
 ``` {r, echo = T}
-market <- d$market
-rounds <- d$funding_rounds
-summary(aov(rounds ~ factor(market)))
+summary(aov(rounds ~ market, data=d))
 
+```
+
+```{r}
+#plotting means of samples (for each category)
+funding_per_round <- aggregate(funding_per_round ~ market, data=d, FUN=mean)
+funding_per_round$market <- with(funding_per_round, reorder(market, funding_per_round))
+print(funding_per_round)
+
+
+#Plot the average funding amounts for each market
+ggplot(funding_per_round, aes(x = market, y = funding_per_round)) + geom_bar(stat="identity", fill="lightblue") + coord_flip() + labs(title = "Average Number of Rounds by Industry", x = "", y = "")
 ```
 

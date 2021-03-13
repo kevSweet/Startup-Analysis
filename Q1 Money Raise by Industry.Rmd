@@ -15,23 +15,17 @@ library(ggplot2)
 #importing Start-up Investments Crunchbase data set.
 #Source: https://www.kaggle.com/arindam235/startup-investments-crunchbase
 
-investments <- read.csv("investments_VC.csv", header = TRUE)
-dim(investments)
+investments <- readRDS("kaggle_data_cleaned.rds")
 
-allMarkets <- investments[c("market", "funding_total_usd")]
+allMarkets <- investments[c("market", "funding_total_usd", "funding_rounds")]
 dim(allMarkets)
 
-markets <- c(" Travel ", " Transportation ", " Games ", " Music ", " Video ", " Finance ", " Cloud Computing ", " Health Care ", " Hospitality ", " Education ")
+markets <- c("Travel", "Transportation", "Games", "Music", "Video", "Finance", "Cloud Computing", "Health Care", "Hospitality", "Education")
 
 #filtered to columns of interest, markets of interest, and remove all null funding amounts
-d <- allMarkets[which(allMarkets$market %in% markets & allMarkets$funding_total_usd != " -   "), ]
-dim(d)
+d <- droplevels(allMarkets[which(allMarkets$market %in% markets), ])
 summary(d)
 
-#converting funding to numeric value 
-typeof(d$funding_total_usd)
-d[, 2] <- sapply(d[, 2], as.numeric)
-typeof(d$funding_total_usd)
 
 ```
 
@@ -54,9 +48,9 @@ For this analysis I will be performing an ANOVA F-Test to check for $\alpha = 0.
 ```{r}
 #frequency of companies across markets in descending order
 sorted_markets <- sort(table(d$market), decreasing=TRUE)
-markets <- sorted_markets[1:10]
+markets <- names(sorted_markets[1:10])
 par(mar=c(10, 5, 1, 1)) #adjusting margins
-barplot(markets, las=2, axisnames = T)
+barplot(sorted_markets, las=2, axisnames = T)
 
 ```
 
@@ -66,14 +60,11 @@ barplot(markets, las=2, axisnames = T)
 ### 1. Normality
 ```{r, echo = T}
 #Find the sample size for each market
-
-markets <- c(" Travel ", " Transportation ", " Games ", " Music ", " Video ", " Finance ", " Cloud Computing ", " Health Care ", " Hospitality ", " Education ")
-x <- 1:10
-for (i in x) {
-  cat(markets[i], "sample size: ", dim(d[which(d$market == markets[i]), ])[1], "\n")
+for (market in markets) {
+  cat(market, "sample size: ", dim(d[d$market == market, ])[1], "\n")
 }
 ```
-Given that the sample sizes range from a minimum of 86 (Transportation) to a maximum of 1114 (Health Care), we can assume that the Central Limit Theorem will apply and that the means of the samples will follow a normal distribution. 
+Given that the sample sizes range from a minimum of 39 (Transportation) to a maximum of 631 (Health Care), we can assume that the Central Limit Theorem will apply and that the means of the samples will follow a normal distribution. 
 
 ### 2. Independence
 Assuming independence of samples for this case. We have no further information on the data collection methods to confirm independence.That being said no two groups consists of the same company appearing in multiple markets and all companies are expected to be independent startups with no collaboration or affiliation with each other.
@@ -86,8 +77,8 @@ boxplot <- ggplot(d, aes(x = market, y = funding_total_usd))
 boxplot + geom_boxplot()
 
 #checking for equal vriance after the log transform
-d$funding_total_usd <- log(d$funding_total_usd)
-log_boxplot <- ggplot(d, aes(x = market, y = funding_total_usd))
+d$funding_log <- log(d$funding_total_usd)
+log_boxplot <- ggplot(d, aes(x = market, y = funding_log))
 log_boxplot + geom_boxplot()
 
 ```
@@ -96,7 +87,7 @@ log_boxplot + geom_boxplot()
 
 ```{r, echo = T}
 market <- d$market
-funding <- d$funding_total_usd
+funding <- d$funding_log
 summary(aov(funding ~ market))
 ```
 Using an ANOVA F-Test with $\alpha = 0.05$, we find evidence to reject the null hypothesis, and conclude that there is a difference in the funding total between the industries of interest.
@@ -105,12 +96,9 @@ Using an ANOVA F-Test with $\alpha = 0.05$, we find evidence to reject the null 
 ### Visualising Differences
 ```{r, echo = T}
 #Plot the average funding amounts for each market
-
-markets <- c(" Travel ", " Transportation ", " Games ", " Music ", " Video ", " Finance ", " Cloud Computing ", " Health Care ", " Hospitality ", " Education ")
-x <- 1:10
-for (i in x) {
-  m <- d[which(d$market == markets[i]), ]
-  cat(markets[i], "average funding amount: $", mean(m$funding_total_usd), "\n")
+for (market in markets) {
+  m <- d[d$market == market, ]
+  cat(market, "average funding amount: $", mean(m$funding_total_usd), "\n")
 }
 
 #plotting means of samples (for each category)
@@ -124,5 +112,40 @@ markets = as.data.frame(markets)
 means <- data.frame(markets, means_data)
 
 ggplot(means, aes(x = reorder(markets, -means_data), y = means_data)) + geom_bar(stat = "identity") + labs(title = "Average Funding Total by Industry", x = "", y = "")
+```
+
+
+### What do Funding Rounds look like?
+
+The number of rounds ranges from 1 to 18. Most firms had just one round, and the third quartile falls at just 3 rounds. The mean and variance are close to equal, and the data may be an Exponential (blue) distribution or Negative Binomial (red) distribution. The Negative Binomial would have a theoretical backing, where each round of funding is essentially a trial where the company has a (small) chance of proceeding to the next round, otherwise it stops raising venture capital.## Performing Analysis
+
+```{r, echo = T}
+#plotting means of samples (for each category)
+means_data = c()
+for(market in markets){
+  temp = d[d$market == market,]
+  means_data <- c(mean(temp$funding_rounds), means_data)
+}
+means_data = as.data.frame(means_data)
+markets = as.data.frame(markets)
+means <- data.frame(markets, means_data)
+
+ggplot(means, aes(x = reorder(markets, -means_data), y = means_data)) + geom_bar(stat = "identity") + labs(title = "Average Number of Rounds by Industry", x = "", y = "")
+```
+
+Checking assumption of equal variance: 
+
+```{r, echo = T}
+boxplot <- ggplot(d, aes(x = market, y = funding_rounds))
+boxplot + geom_boxplot()
+
+```
+
+Performing ANOVA F-Test:
+``` {r, echo = T}
+market <- d$market
+rounds <- d$funding_rounds
+summary(aov(rounds ~ factor(market)))
+
 ```
 
