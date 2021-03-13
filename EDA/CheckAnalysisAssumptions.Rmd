@@ -1,0 +1,86 @@
+---
+title: "CheckAnalysisAssumptions"
+author: "Kevin Sweet"
+date: "February 16, 2021"
+output: pdf_document
+---
+
+```{r}
+require(dplyr)
+kaggle_data_cleaned <- readRDS("kaggle_data_cleaned.rds")
+```
+
+
+
+Check if Anova assumptions are valid for mean amounts of money raised for each industry (Question 1)
+1. Equal Variances
+2. Normally distributed
+3. Independent samples
+
+First we will filter out values without sufficiently large sample sizes. A floor group sample size of 30 was chosen so that we can assume by the central limit theorem that the sample data is normally distributed.This assumption of normality will be further tested in our full analysis.
+
+```{r}
+filteredData <- kaggle_data_cleaned %>% group_by(market) %>% filter(n() >= 30)
+
+group_variances <- with(filteredData,tapply(seed, market, var))
+group_variances <- group_variances[!is.na(group_variances)]
+group_samplesizes <- with(filteredData,tapply(seed, market, length))
+group_samplesizes <- group_samplesizes[!is.na(group_samplesizes)]
+
+max(group_variances) - min(group_variances)
+
+group_samplesizes <- with(kaggle_data_cleaned,tapply(funding_total_usd, market, length))
+group_samplesizes <- group_samplesizes[!is.na(group_samplesizes)] 
+group_samplesizes <- group_samplesizes[group_samplesizes >= 30]
+```
+
+### Check if data appears linear for total amount of money raised (Question 2)
+
+```{r}
+# EDA
+kaggle_data_cleaned %>% 
+  select(first_funding_at) %>% 
+  arrange(first_funding_at)
+
+# QUESTION FOR THE TEAM:  Can we adjust for inflation?
+
+first_year <- 1980
+# bucket first_funding_at by year and filter bad data (funding 0011)
+first_funding_date <- kaggle_data_cleaned %>% 
+  mutate(first_funding_at = as.numeric(substring(first_funding_at, 1,4)) ) %>% 
+  filter(first_funding_at >= first_year) %>% 
+  filter(first_funding_at <= 2014) %>%
+  mutate(first_funding_at =  first_funding_at - first_year) %>% 
+  filter(seed < 10000000)  %>%  # will need to justify
+  filter(seed > 0) # will need to justify
+
+
+model <- lm(formula = seed ~ first_funding_at, data = first_funding_date)
+plot(seed ~ first_funding_at, data=first_funding_date); abline(model) 
+
+
+#boxplot(formula = seed ~ first_funding_at, data = first_funding_date)
+```
+
+```{r}
+summary(model) 
+```
+
+### Check if Anova assumptions are valid for mean count of financing rounds across industry (Question 3)
+
+```{r}
+hist(filteredData$funding_rounds)
+industryData <- do.call(data.frame, aggregate(cbind(funding_rounds, funding_total_usd, venture, seed)  ~ market, data=filteredData, FUN=function(x) c(mn = mean(x), n = length(x), var = var(x))))
+summary(industryData$funding_rounds.mn)
+
+#Variance in rounds is not equal
+summary(industryData$funding_rounds.var)
+hist(industryData$funding_rounds.var)
+
+# Round to seed funding has no trend
+plot(industryData$funding_rounds.mn, industryData$seed.mn)
+
+# Round to venture funding is linear.
+plot(industryData$funding_rounds.mn, industryData$venture.mn)
+
+```

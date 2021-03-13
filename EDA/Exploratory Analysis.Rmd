@@ -1,0 +1,79 @@
+---
+title: "Startup Funding Exploratory Analysis"
+output: html_notebook
+---
+
+
+First, we import the data, converting dates and numeric values where necessary.
+
+```{r}
+library(blscrapeR)
+# Import
+data <- read.csv("investments_VC.csv", strip.white=TRUE)
+
+# Convert Dates
+date_cols <- c("founded_at","first_funding_at","last_funding_at")
+data[, date_cols] <- lapply(data[ , date_cols], as.Date)
+
+# Convert Factors
+factor_cols <- c("category_list", "market", "status", "country_code", "state_code", "region", "city")
+data[, factor_cols] <- lapply(data[ , factor_cols], as.factor)
+
+# Convert numerics
+data$funding_total_usd <- as.numeric(sapply(data$funding_total_usd, function(x){gsub("[ ,-]", "", x)}, USE.NAMES=FALSE))
+data$funding_total_usd[is.na(data$funding_total_usd)] <- 0
+
+# Remove blank rows and missing status
+data <- data[!(data$name == "" | is.na(data$name)),]
+data <- data[data$status != "",]
+data <- data[data$funding_total_usd != 0,]
+data <- data[data$market != "",]
+
+# At funding years
+#data$first_funding_year <- format(as.Date(data$first_funding_date, format="%d/%m/%Y"),"%Y")
+#data$last_funding_year <- format(as.Date(data$last_funding_date, format="%d/%m/%Y"),"%Y")
+
+# Only USA
+data <- data[data$country_code == "USA",]
+
+# After 1980
+data <- data[data$founded_year >= 1980 & !is.na(data$founded_year) ,]
+
+
+
+summary(data)
+```
+
+Next, we confirm some of the data. All the funds data adds up to the total, but venture money and round money do not perfectly align. It appears that in most cases, the sum of round totals adds up to be the venture funding, but sometimes round data is missing or see data is included. A new round_total variable is create.
+
+```{r}
+# Count Na's as 0
+fundingData <- data[,c("seed", "venture", "equity_crowdfunding", "undisclosed", "convertible_note", "debt_financing", "angel", "grant", "private_equity","post_ipo_equity","post_ipo_debt","secondary_market","product_crowdfunding")]
+fundingData[is.na(fundingData)] <- 0
+
+# Sums
+actual_total = apply(fundingData, 1, sum)
+print(summary(data$funding_total_usd - actual_total))
+
+
+roundData <- data[c("round_A", "round_B", "round_C", "round_D", "round_E", "round_F", "round_G", "round_H")]
+roundData[is.na(roundData)] <- 0
+data$ round_total <- apply(roundData, 1, sum)
+diff <- data$venture - data$round_total
+
+print(summary(diff))
+
+plot(data$venture, data$round_total)
+abline(0,1)
+
+# Create inflation adjusted table based of 1980 dollars
+inflationlookup <- inflation_adjust(1980)
+data$inflationAdjustedSeed_1980 <- data$seed * 
+        inflationlookup[match(format(data$first_funding_at, format="%Y"), inflationlookup$year),]$adj_value
+
+```
+```{r}
+saveRDS(data, "kaggle_data_cleaned.rds")
+write.csv(data, "kaggle_data_cleaned.csv")
+```
+
