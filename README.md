@@ -32,3 +32,39 @@ Other discrepancies, biases or interesting findings in the data are mentioned in
 
 These issues and discrepancies were explored more as we designed our approach and narrowed down our scope which will be explained in further detail in the following sections. Keeping in mind all of this information we proceeded to frame our questions ensuring quality in our analysis.    
 
+## File Structure
+Below is a tree representation of our github repository:
+```
+│   .gitignore
+│   .RData
+│   .Rhistory
+│   README.md
+│
+├───Datasets
+│       investments_VC.csv
+│       kaggle_data_cleaned.csv
+│       kaggle_data_cleaned.rds
+│
+├───Documentation
+│       Funding a Start-up Presentation (1) (1).pptx
+│
+├───EDA
+│       CheckAnalysisAssumptions.Rmd
+│       Exploratory Analysis.nb.html
+│       Exploratory Analysis.Rmd
+│
+├───Industry Analysis
+│       Q1 and Q2 Industries.Rmd
+│       Q1 Money Raise by Industry.Rmd
+│       Q3 Investment Rounds by Industry.Rmd
+│       Question1.nb.html
+│       Question1.Rmd
+│       Question2.rmd
+│
+├───Seed and Venture Funding
+│       Question4.Rmd
+│
+└───Seed Funding Over Time
+        Question3.html
+        Question3.Rmd
+```
