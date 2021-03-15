@@ -1,5 +1,5 @@
 ---
-title: "Question 4"
+title: "Seed and Venture Funding"
 author: "Jonathan Kerr"
 subtitle: "Does the proportion of companies that get seed funding also get venture funding?"
 output: html_document
