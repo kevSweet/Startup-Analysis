@@ -1,5 +1,5 @@
 ---
-title: "Money Raised by Industry"
+title: "Funding by Industry"
 subtitle: "Is the average amount of money raised different between industries?"
 date: "2/27/2021"
 output: html_document
@@ -130,18 +130,19 @@ boxplot + geom_boxplot()
 
 Performing ANOVA F-Test:
 ``` {r, echo = T}
-summary(aov(rounds ~ market, data=d))
+summary(aov(funding_rounds ~ market, data=d))
 
 ```
 
 ```{r}
 #plotting means of samples (for each category)
+funding_per_round <- d$funding_total_usd / d$funding_rounds
 funding_per_round <- aggregate(funding_per_round ~ market, data=d, FUN=mean)
 funding_per_round$market <- with(funding_per_round, reorder(market, funding_per_round))
 print(funding_per_round)
 
 
 #Plot the average funding amounts for each market
-ggplot(funding_per_round, aes(x = market, y = funding_per_round)) + geom_bar(stat="identity", fill="lightblue") + coord_flip() + labs(title = "Average Number of Rounds by Industry", x = "", y = "")
+ggplot(funding_per_round, aes(x = market, y = funding_per_round/1000000)) + geom_bar(stat="identity", fill="lightblue") + coord_flip() + labs(title = "Average Funding Amount Per Round", x = "", y = "$ million")
 ```
 
