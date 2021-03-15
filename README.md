@@ -34,15 +34,37 @@ Other discrepancies, biases or interesting findings in the data are mentioned in
 
 These issues and discrepancies were explored more as we designed our approach and narrowed down our scope which will be explained in further detail in the following sections. Keeping in mind all of this information we proceeded to frame our questions ensuring quality in our analysis.    
 
+## Conclusion
+In the analysis of the crunchbase dataset, we discovered a number of statistically significant features.  We found that within this data group:
+The average amount of funding a company raises is associated with the industry the company is in.
+The average number of fundraising rounds are associated with the industry the company is in.
+The amount of seed money being invested is increasing over time (13.5% growth YoY).
+Companies that don’t do a seed round tend to do venture rounds more frequently.
+
+It can’t be overstated that given the previously mentioned biases in the data, these findings should be viewed with skepticism.  It is not realistic to assume that 55% of all startup companies are going to receive venture capital funding, especially when industry norms are closer to 0.05% (Wood, 2020).  With this result in doubt, we have to consider that our other results could also be strongly biased, putting the statistical significance of all our findings into question.  While we would recommend using our methodology for further study in this area, we can’t recommend extrapolating the results to real world predictions.
+
+## Future Works
+Grouping Markets
+A difficulty that arose while assessing markets and how different types or funding amounts varied between them was that there were about 754 different categories of markets that start-ups operated in. We chose to scope down our project by selectively handpicking a few markets that had enough data to be considered for analysis. We found that many categories of markets were largely similar and could be grouped into larger umbrellas of categories. The groups could be centered around software, healthcare/medicine, multimedia  and so on. There was also the possibility of creating two categories of Technology and Not Technology that was considered. A study further developing the idea of grouping these markets and testing hypotheses based on funding types for these larger groups would be interesting to pursue. This would give us a better understanding of more successful markets or market-types in terms of funding.   
+
+Bubbles and Lower-Percentile Seed Funding
+One discovery of interest was that the 25th and 50th percentiles of seed funding only showed growth during the early 2000’s dotcom boom, and dropped back to a constant rate after the crash. Further exploration is warranted in determining if this type of behavior could be useful in predicting future bubbles before they crash.
+
+Impact of Industry on Seed Funding Over Time
+The dotcom bubble had a dramatic impact on the average seed funding levels, even though it should have primarily impacted software companies. A further analysis into seed funding trends by industry may reveal how deeply our findings are the result of just software or specific industries experiencing heavy growth.
+
+Validate Seed and Venture Funding Findings
+With the many issues and biases that we came across in this dataset, we realized that we could never have a high confidence in generalizing our results. We decided that in order to validate our findings, the only path forward would be to find similar datasets which are less biased and conduct the same tests. In this way we could validate our findings regarding seed and venture funding and develop more generalized results useful for further study into start-up funding type dynamics. 
+
 ## File Structure
 Below is a tree representation of our github repository:
 ```
 │   .gitignore
-│   .RData
-│   .Rhistory
+│   LICENSE.md
 │   README.md
 │
 ├───Datasets
+│       industryData.csv
 │       investments_VC.csv
 │       kaggle_data_cleaned.csv
 │       kaggle_data_cleaned.rds
@@ -56,17 +78,26 @@ Below is a tree representation of our github repository:
 │       Exploratory Analysis.Rmd
 │
 ├───Industry Analysis
-│       Q1 and Q2 Industries.Rmd
-│       Q1 Money Raise by Industry.Rmd
-│       Q3 Investment Rounds by Industry.Rmd
-│       Question1.nb.html
-│       Question1.Rmd
-│       Question2.rmd
+│   │   Q1 and Q2 Industries.Rmd
+│   │   Q1 Money Raise by Industry.Rmd
+│   │   Q3 Investment Rounds by Industry.Rmd
+│   │   Question1.nb.html
+│   │   Question1.Rmd
+│   │   Question2.rmd
+│   │   Question3.nb.html
+│   │
+│   └───Figures
+│           unnamed-chunk-3-1.png
+│           unnamed-chunk-4-1.png
+│           unnamed-chunk-4-2.png
+│           unnamed-chunk-4-3.png
+│           unnamed-chunk-4-4.png
 │
 ├───Seed and Venture Funding
 │       Question4.Rmd
 │
 └───Seed Funding Over Time
+        Question2.html
         Question3.html
         Question3.Rmd
 ```
