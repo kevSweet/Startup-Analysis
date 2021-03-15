@@ -1,8 +1,10 @@
 ---
 title: "Money Raised by Industry"
-subtitle: "Is the average amount of money raised different between industries?"
+output:
+  pdf_document: default
+  html_document: default
 date: "2/27/2021"
-output: html_document
+subtitle: Is the average amount of money raised different between industries?
 ---
 ## Introduction
 ```{r setup, include=FALSE}
@@ -15,7 +17,7 @@ library(ggplot2)
 #importing Start-up Investments Crunchbase data set.
 #Source: https://www.kaggle.com/arindam235/startup-investments-crunchbase
 
-investments <- readRDS("kaggle_data_cleaned.rds")
+investments <- readRDS("..\\Datasets\\kaggle_data_cleaned.rds")
 
 allMarkets <- investments[c("market", "funding_total_usd", "funding_rounds")]
 dim(allMarkets)

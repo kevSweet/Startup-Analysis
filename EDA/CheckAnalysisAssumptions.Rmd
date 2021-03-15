@@ -7,7 +7,7 @@ output: pdf_document
 
 ```{r}
 require(dplyr)
-kaggle_data_cleaned <- readRDS("kaggle_data_cleaned.rds")
+kaggle_data_cleaned <- readRDS("..\\Datasets\\kaggle_data_cleaned.rds")
 ```
 
 

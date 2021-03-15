@@ -15,7 +15,7 @@ library(ggplot2)
 #importing Start-up Investments Crunchbase data set.
 #Source: https://www.kaggle.com/arindam235/startup-investments-crunchbase
 
-investments <- read.csv("investments_VC.csv", header = TRUE)
+investments <- read.csv("..\\Datasets\\investments_VC.csv", header = TRUE)
 dim(investments)
 
 allMarkets <- investments[c("market", "funding_rounds")]

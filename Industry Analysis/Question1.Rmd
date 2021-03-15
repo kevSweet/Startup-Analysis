@@ -16,7 +16,7 @@ First we will do some exploration on the cleaned dataset.
 
 ```{r}
 require(dplyr)
-kaggle_data_cleaned <- readRDS("kaggle_data_cleaned.rds")
+kaggle_data_cleaned <- readRDS("..\\Datasets\\kaggle_data_cleaned.rds")
 summary(kaggle_data_cleaned)
 ```
 Since there's a lot of information here lets remove the unnecessary information. Here our main focus is the `market` and the `funding_total_usd` for each company.

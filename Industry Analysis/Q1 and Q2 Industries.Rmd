@@ -15,7 +15,7 @@ library(ggplot2)
 #importing Start-up Investments Crunchbase data set.
 #Source: https://www.kaggle.com/arindam235/startup-investments-crunchbase
 
-investments <- readRDS("kaggle_data_cleaned.rds")
+investments <- readRDS("..\\Datasets\\kaggle_data_cleaned.rds")
 
 allMarkets <- investments[c("market", "funding_total_usd", "funding_rounds")]
 dim(allMarkets)

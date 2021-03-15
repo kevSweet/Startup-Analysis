@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set( echo = TRUE )
 require( dplyr )
-kaggle_data_cleaned <- readRDS( "kaggle_data_cleaned.rds" )
+kaggle_data_cleaned <- readRDS( "..\\Datasets\\kaggle_data_cleaned.rds" )
 ```
 
 ## What proportion of companies get seed funding?

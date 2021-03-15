@@ -1,0 +1,104 @@
+---
+title: "Question 3"
+subtitle: "Can a company expect to have more financing rounds if they’re in a particular industry?"
+output: html_notebook
+---
+
+### Analysis
+
+Import cleaned data and used libraries.
+
+```{r}
+library(ggplot2)
+fundingData <- readRDS("..\\Datasets\\kaggle_data_cleaned.rds")
+```
+
+
+### What do Funding Rounds look like?
+
+The number of rounds ranges from 1 to 18. Most firms had just one round, and the third quartile falls at just 3 rounds. The mean and variance are close to equal, and the data may be an Exponential (blue) distribution or Negative Binomial (red) distribution. The Negative Binomial would have a theoretical backing, where each round of funding is essentially a trial where the company has a (small) chance of proceeding to the next round, otherwise it stops raising venture capital.
+
+```{r}
+summary(fundingData$funding_rounds)
+print(c("Mean", mean(fundingData$funding_rounds)))
+print(c("Var", var(fundingData$funding_rounds)))
+hist(fundingData$funding_rounds, prob=TRUE)
+lines(1:max(fundingData$funding_rounds), dexp(0:(max(fundingData$funding_rounds)-1), 1/mean(fundingData$funding_rounds)), col = 'blue')
+lines(1:max(fundingData$funding_rounds), dnbinom(0:(max(fundingData$funding_rounds)-1), 1, mu=1/mean(fundingData$funding_rounds)), col = 'red')
+```
+
+
+
+The average amount of funding, when we only include rounds that received funding, increases steadily throughout the rounds, starting at an average of \$7 million in Round A and ending with an average $50 million in Round H. However, the most money raised in total is in Round B, due to the higher average than Round A combined with higher frequency than all later rounds.
+
+```{r}
+roundFunding <- fundingData[fundingData["round_total"] > 0,grep("round_.$", colnames(fundingData))]
+is.na(roundFunding) <- roundFunding==0
+roundFunding.mean <- colMeans(roundFunding, na.rm=TRUE)
+roundFunding.sum <- colSums(roundFunding, na.rm=TRUE)
+print(roundFunding.mean)
+```
+
+
+Figure x1: The average amount of money raised in each round 
+```{r}
+barplot(roundFunding.mean)
+```
+
+Figure x2: The expecation of how much money can be raised in a particular round
+```{r}
+barplot(roundFunding.sum)
+```
+
+
+### How does it relate to market?
+
+We restrict the analysis to markets with at least 30 companies recorded.
+
+
+## ? Why are we using (funding_total_usd, venture, seed) instead of just funding_total_usd?
+
+
+```{r}
+industryList <- c('Travel','Transportation','Games','Music','Video','Finance','Cloud Computing','Health Care','Hospitality','Education')
+targetMarketData <- subset(fundingData, market %in% industryList)
+industryData <- do.call(data.frame, aggregate(cbind(funding_rounds, funding_total_usd, venture, seed)  ~ market, data=targetMarketData, FUN=function(x) c(mn = mean(x), var = var(x))))
+industryData$n <- aggregate(funding_total_usd  ~ market, data=targetMarketData, FUN=length)$funding_total_usd
+summary(industryData$funding_rounds.mn)
+```
+
+Variance does not seem to be consistent between industries.
+
+```{r}
+#Variance in rounds is not equal
+summary(industryData$funding_rounds.var)
+hist(industryData$funding_rounds.var)
+```
+
+By market model
+
+```{r}
+model <- lm(funding_total_usd.mn ~ funding_rounds.mn, data=industryData )
+summary(model)
+plot(model)
+```
+
+
+within market model
+```{r}
+model <- lm(venture ~ funding_rounds + market, data=targetMarketData )
+summary(model)
+plot(model)
+```
+
+
+```{r, echo=FALSE}
+## This doesn't address any of the questions we're investigating
+
+# Round to seed funding has no trend
+#plot(industryData$funding_rounds.mn, industryData$seed.mn)
+
+# Round to venture funding is linear.
+#plot(industryData$funding_rounds.mn, industryData$venture.mn)
+
+```
