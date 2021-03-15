@@ -1,6 +1,6 @@
 # Funding a Start-up:
 ## Evaluating the Business Impact of Funding Types, Sources, Amounts and Timing
-### Authors: Caleb Case | Aaliyah Fiala | Jonathan Kerr | Sai Muktevi | Kevin Sweet
+### Authors: Caleb Case | Aaliyah Hänni | Jonathan Kerr | Sai Muktevi | Kevin Sweet
 ## Abstract
 This study reviews several questions of interest for entrepreneurs as well as investors about Start-up organizations. We performed our analysis using the Kaggle dataset of Crunchbase 2014 snapshot, which includes approximated 50,000 companies. We found that the average amount of money raised, and the average number of funding rounds, both vary by industry. We concluded that the average amount of seed money invested is increasing 13.5% annually. We also found, controversially, that companies that did not have seed rounds are 4 times more likely to have a venture round. Our results should be received with caution, as our dataset included strong survivorship, regional, and market bias.
 
