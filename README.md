@@ -59,6 +59,7 @@ With the many issues and biases that we came across in this dataset, we realized
 ## File Structure
 Below is a tree representation of our github repository:
 ```
+C:.
 │   .gitignore
 │   LICENSE.md
 │   README.md
@@ -70,17 +71,18 @@ Below is a tree representation of our github repository:
 │       kaggle_data_cleaned.rds
 │
 ├───Documentation
+│       Final Written Report.pdf
 │       Funding a Start-up Presentation.pptx
 │
 ├───EDA
 │       Amount Raised by Industry Exploratory Analysis.Rmd
-│	Amount-Raised-by-Industry-Exploratory-Analysis.html
-│	CheckAnalysisAssumptions.Rmd
+│       Amount-Raised-by-Industry-Exploratory-Analysis.html
+│       CheckAnalysisAssumptions.Rmd
 │       Exploratory Analysis.nb.html
 │       Exploratory Analysis.Rmd
-│	Number of Rounds Exploratory Analysis.Rmd
-│	Number of Rounds Exploratory Analysis.nb.html
-│	
+│       Number of Rounds Exploratory Analysis.nb.html
+│       Number of Rounds Exploratory Analysis.Rmd
+│
 ├───Industry Analysis
 │   │   Funding by Industry.Rmd
 │   │   Funding-by-Industry.html
@@ -93,10 +95,10 @@ Below is a tree representation of our github repository:
 │           unnamed-chunk-4-4.png
 │
 ├───Seed and Venture Funding
+│       SeedAndVentureFunding.html
 │       SeedAndVentureFunding.Rmd
-│ 	SeedAndVentureFunding.html
 │
 └───Seed Funding Over Time
-        SeedFundingOverTime.rmd
         SeedFundingOverTime.html
+        SeedFundingOverTime.rmd
 ```
