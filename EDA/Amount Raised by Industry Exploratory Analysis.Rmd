@@ -1,5 +1,5 @@
 ---
-title: "Question 1"
+title: "Amount Raised by Industry Exploratory Analysis"
 date: "2/19/2021"
 output: html_document
 ---

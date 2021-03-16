@@ -1,0 +1,122 @@
+---
+title: "Seed and Venture Funding"
+author: "Jonathan Kerr"
+subtitle: "Does the proportion of companies that get seed funding also get venture funding?"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( echo = TRUE )
+require( dplyr )
+kaggle_data_cleaned <- readRDS( "..\\Datasets\\kaggle_data_cleaned.rds" )
+```
+
+## What proportion of companies get seed funding?
+
+```{r}
+companies.num <- nrow( kaggle_data_cleaned )
+seed.num <- nrow( kaggle_data_cleaned %>% filter( seed > 0 ) )
+cat( round( ( seed.num/companies.num ) * 100, 0 ), "% of the companies received seed funding", sep = "" )
+```
+
+## Of the companies that got seed funding, what proportion also got venture funding?
+
+```{r}
+seed.and.venture.num <- nrow( kaggle_data_cleaned %>% filter( seed > 0 ) %>% filter( venture > 0 ) )
+cat( round( ( seed.and.venture.num/seed.num ) * 100, 0 ), "% of the companies that received seed funding also received venture funding.", sep = "" )
+```
+
+## What proportion of all companies got venture funding?
+```{r}
+venture.all <- nrow( kaggle_data_cleaned %>% filter( venture > 0 ) )
+cat( round( ( venture.all/companies.num ) * 100, 0 ), "% of all the companies sampled recieved venture funding.", sep = "" )
+```
+
+## What proportion of all companies got seed and venture funding?
+```{r}
+cat( round( ( seed.and.venture.num/companies.num ) * 100, 0 ), "% of the companeies that had seed funding also had venture funding.", sep = "" )
+```
+
+
+```{r}
+venture.noseed.num <- nrow( kaggle_data_cleaned %>% filter( seed == 0 ) %>% filter( venture > 0 ) )
+cat( round( ( venture.noseed.num/companies.num ) * 100, 0 ), "% of the companeies that didn't have seed funding also had venture funding.", sep = "" )
+```
+
+
+```{r, echo=FALSE}
+  ## Note to classmates: We probably don't need to include above statements.  I suspect the following would cover it.
+```
+
+
+## Venn Diagram
+
+Let's begin by looking at the proportion of companies that had seed and venture rounds.
+
+```{r, echo=FALSE}
+#install.packages("BiocManager")
+#BiocManager::install("limma")
+
+seed.v <- kaggle_data_cleaned %>% select(seed) %>% mutate(seed = as.numeric(seed > 0) ) 
+venture.v <- kaggle_data_cleaned %>% select(venture) %>% mutate(venture = as.numeric(venture > 0) ) 
+
+library( limma )
+g <- cbind(
+  seed = seed.v, 
+  venture = venture.v )
+vennDiagram( round( vennCounts( g ) / nrow( seed.v ) * 100, 0 ),
+             main="Funding sources (%)",
+             names = c("Seed", "Venture"),
+             counts.col=c("blue", "blue"),
+             circle.col = c("blue", "red"))
+```
+
+### If you did a seed round, how likely are you to do a venture round?
+
+As we see in the diagram, not all companies do a seed round, nor do all companies do a venture round.  By definition, a seed round takes place before a venture round.  So if a seed round were to occur, what would be the probability of also doing a venture round?  
+
+We know by Bayes Theorum that P(Venture|Seed) = P(Venture \cap Seed) / P(Seed) = .09/.32 = 0.28.  This means that if a company was to have a seed round, they'd have a 28% chance of also doing a venture round.
+
+### If you didn't do a seed round, how likely are you to do a venture round?
+
+Conversely, if a company didn't do a seed round, the we need to consider the Probability that there wasn't a seed round: P(!Seed) = 1 - 0.32 = 0.68.  Using the same formula to calculate the probability of a venture, given they didn't do a seed round: P(Venture | !Seed) =  P(Venture \cap !Seed) / P(!Seed) = .55/.68 = .81.  This is means that a company that doesn't do a seed round, has an 81% chance of getting venture funding.  
+
+These findings do not agree with our theory that seed funding would increase the likelihood of the company making it to venture rounds. Further study would be needed to interpret these results. 
+```{r, echo=FALSE}
+Pv <- .55 + .09
+Ps <- .23 + .09
+Psv <- .09
+PnotS <-  1 - Ps
+PVnotS <- .55
+
+#Psv/Ps
+#PVnotS/PnotS  
+```
+
+To validate our usage of bayes theorem, we can perform a chi-squared test for independence.
+```{r}
+test.table <- table(seed.v$seed, venture.v$venture, dnn = c("Seed", "Venture"))
+test.table
+chisq.test(test.table)
+```
+
+The result of the chi-square test is we reject the null hypothesis that the presence of seed is independent of venture, therefore we can infer that these two variables are dependent on one another. This validates our bayes theorem approach to calculating the conditional probability of these events.
+
+
+To attempt to explain the reasoning for this surprising finding, we first want to check if there is a difference in means between seed funding and venture funding.
+```{r}
+hist(log(kaggle_data_cleaned$venture), col=rgb(1,0,0,0.5), main = "Histogram of log transformed seed(b) and venture(r) funding")
+hist(log(kaggle_data_cleaned$seed),col=rgb(0,0,1,0.5), add=T)
+```
+Since the blue histogram is shifted slightly leftward of the red histogram, we see some evidence that the mean seed funding is different from mean venture funding. Before we test this difference with a hypothesis test, lets examine whether there is a difference between venture funding when a seed round is and isn't present. Our theory is that companies without reported seed funding could have their seed funding miscategorized as venture funding.
+
+```{r}
+hist(log(subset(kaggle_data_cleaned, seed > 0)$venture), col=rgb(1,0,0,0.5), main = "Histogram of log trans. venture funding with(r) and without(b) seed", ylim =  c(0,3000))
+hist(log(subset(kaggle_data_cleaned, seed == 0)$venture), col=rgb(0,0,1,0.5), add=T)
+box()
+```
+These two histograms are nearly identical. This means there is little evidence that companies that do not have reported seed rounds have any difference in the size of their venture rounds.
+
+
+
+

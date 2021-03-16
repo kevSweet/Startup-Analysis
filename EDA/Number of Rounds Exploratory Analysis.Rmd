@@ -1,5 +1,5 @@
 ---
-title: "Question 3"
+title: "Number of Rounds Exploratory Analysis"
 subtitle: "Can a company expect to have more financing rounds if they’re in a particular industry?"
 output: html_notebook
 ---
@@ -91,14 +91,3 @@ summary(model)
 plot(model)
 ```
 
-
-```{r, echo=FALSE}
-## This doesn't address any of the questions we're investigating
-
-# Round to seed funding has no trend
-#plot(industryData$funding_rounds.mn, industryData$seed.mn)
-
-# Round to venture funding is linear.
-#plot(industryData$funding_rounds.mn, industryData$venture.mn)
-
-```

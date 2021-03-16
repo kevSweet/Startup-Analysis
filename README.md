@@ -73,18 +73,17 @@ Below is a tree representation of our github repository:
 │       Funding a Start-up Presentation.pptx
 │
 ├───EDA
-│       CheckAnalysisAssumptions.Rmd
+│       Amount Raised by Industry Exploratory Analysis.Rmd
+│	Amount-Raised-by-Industry-Exploratory-Analysis.html
+│	CheckAnalysisAssumptions.Rmd
 │       Exploratory Analysis.nb.html
 │       Exploratory Analysis.Rmd
-│
+│	Number of Rounds Exploratory Analysis.Rmd
+│	Number of Rounds Exploratory Analysis.nb.html
+│	
 ├───Industry Analysis
-│   │   Q1 and Q2 Industries.Rmd
-│   │   Q1 Money Raise by Industry.Rmd
-│   │   Q3 Investment Rounds by Industry.Rmd
-│   │   Question1.nb.html
-│   │   Question1.Rmd
-│   │   Question2.rmd
-│   │   Question3.nb.html
+│   │   Funding by Industry.Rmd
+│   │   Funding-by-Industry.html
 │   │
 │   └───Figures
 │           unnamed-chunk-3-1.png
@@ -94,10 +93,10 @@ Below is a tree representation of our github repository:
 │           unnamed-chunk-4-4.png
 │
 ├───Seed and Venture Funding
-│       Question4.Rmd
+│       SeedAndVentureFunding.Rmd
+│ 	SeedAndVentureFunding.html
 │
 └───Seed Funding Over Time
-        Question2.html
-        Question3.html
-        Question3.Rmd
+        SeedFundingOverTime.rmd
+        SeedFundingOverTime.html
 ```
